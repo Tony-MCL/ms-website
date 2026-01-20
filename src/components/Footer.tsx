@@ -1,6 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
+
+// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
+const MCL_ORIGIN = "https://morningcoffeelabs.no";
+function mclHref(path: string) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${MCL_ORIGIN}/#${p}`;
+}
 
 const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -14,24 +20,16 @@ const Footer: React.FC = () => {
         </span>
 
         <nav className="footer-links">
-          <Link to="/kjopsvilkar">
-            {t("footer.links.termsPurchase")}
-          </Link>
+          <a href={mclHref("/kjopsvilkar")}>{t("footer.links.termsPurchase")}</a>
           <span>·</span>
 
-          <Link to="/brukervilkar">
-            {t("footer.links.termsUse")}
-          </Link>
+          <a href={mclHref("/brukervilkar")}>{t("footer.links.termsUse")}</a>
           <span>·</span>
 
-          <Link to="/personvern">
-            {t("footer.links.privacy")}
-          </Link>
+          <a href={mclHref("/personvern")}>{t("footer.links.privacy")}</a>
           <span>·</span>
 
-          <Link to="/refusjon">
-            {t("footer.links.refund")}
-          </Link>
+          <a href={mclHref("/refusjon")}>{t("footer.links.refund")}</a>
         </nav>
       </div>
     </footer>
