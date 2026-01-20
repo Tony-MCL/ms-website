@@ -1,6 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
+
+// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
+const MCL_ORIGIN = "https://morningcoffeelabs.no";
+function mclHref(path: string) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${MCL_ORIGIN}/#${p}`;
+}
 
 const ProgressPage: React.FC = () => {
   const { t } = useI18n();
@@ -19,11 +25,18 @@ const ProgressPage: React.FC = () => {
           {t("progressPage.hero.intro")}
         </p>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.8rem", marginTop: "1rem" }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.8rem",
+            marginTop: "1rem",
+          }}
+        >
           <span className="badge">{t("progressPage.hero.badge")}</span>
 
-          <Link
-            to="/kontakt"
+          <a
+            href={mclHref("/kontakt")}
             style={{
               alignSelf: "center",
               fontSize: "0.95rem",
@@ -31,7 +44,7 @@ const ProgressPage: React.FC = () => {
             }}
           >
             {t("progressPage.hero.notifyCta")}
-          </Link>
+          </a>
         </div>
       </section>
 
@@ -69,7 +82,7 @@ const ProgressPage: React.FC = () => {
           </p>
 
           <p style={{ marginTop: "1rem", marginBottom: 0 }}>
-            <Link to="/">{t("progressPage.next.back")}</Link>
+            <a href={mclHref("/")}>{t("progressPage.next.back")}</a>
           </p>
         </div>
       </section>
