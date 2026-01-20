@@ -5,16 +5,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import WatermarkLayer from "./components/WatermarkLayer";
 
-import HomePage from "./pages/HomePage";
-import AboutPage from "./pages/AboutPage";
-import ContactPage from "./pages/ContactPage";
-import IdeaBankPage from "./pages/IdeaBankPage";
 import ProgressPage from "./pages/ProgressPage";
-
-import KjopsvilkarPage from "./pages/KjopsvilkarPage";
-import BrukervilkarPage from "./pages/BrukervilkarPage";
-import PersonvernPage from "./pages/PersonvernPage";
-import RefusjonPage from "./pages/RefusjonPage"
 
 const App: React.FC = () => {
   return (
@@ -25,20 +16,12 @@ const App: React.FC = () => {
 
       <div className="app-content">
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/om" element={<AboutPage />} />
-          <Route path="/kontakt" element={<ContactPage />} />
-          <Route path="/idebank" element={<IdeaBankPage />} />
-
-          {/* Dummy Progress info-side (ingen checkout) */}
+          {/* Manage System: vi hoster kun Progress her */}
           <Route path="/progress" element={<ProgressPage />} />
 
-          {/* Legal (kan beholdes) */}
-          <Route path="/kjopsvilkar" element={<KjopsvilkarPage />} />
-          <Route path="/brukervilkar" element={<BrukervilkarPage />} />
-          <Route path="/personvern" element={<PersonvernPage />} />
-          <Route path="/refusjon" element={<RefusjonPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Alt annet sendes til /progress */}
+          <Route path="/" element={<Navigate to="/progress" replace />} />
+          <Route path="*" element={<Navigate to="/progress" replace />} />
         </Routes>
       </div>
 
