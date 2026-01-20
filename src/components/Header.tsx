@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 import type { Lang } from "../i18n";
 
 const assetBase = import.meta.env.BASE_URL || "/";
 const logoUrl = `${assetBase}mcl-logo.png`;
+
+// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
+const MCL_ORIGIN = "https://morningcoffeelabs.no";
+function mclHref(path: string) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${MCL_ORIGIN}/#${p}`;
+}
 
 type ThemeMode = "light" | "dark";
 
@@ -39,6 +46,16 @@ const Header: React.FC = () => {
   const closeMenu = () => setOpen(false);
   const isActive = (path: string) => location.pathname === path;
 
+  const navExternal = useMemo(
+    () => [
+      { key: "home", href: mclHref("/") },
+      { key: "services", href: mclHref("/idebank") },
+      { key: "about", href: mclHref("/om") },
+      { key: "contact", href: mclHref("/kontakt") },
+    ],
+    []
+  );
+
   const toggleTheme = () => {
     const next: ThemeMode = theme === "dark" ? "light" : "dark";
     setTheme(next);
@@ -49,41 +66,32 @@ const Header: React.FC = () => {
   const toggleLang = () => {
     const next: Lang = lang === "no" ? "en" : "no";
     setLang(next);
-    closeMenu(); // nice: lukker mobilmeny ved språkbytte
+    closeMenu();
   };
 
   return (
     <>
       <header className="header">
         <div className="header-logo">
-          <Link to="/" onClick={closeMenu}>
+          {/* Logo tar deg tilbake til MCL */}
+          <a href={mclHref("/")} onClick={closeMenu}>
             <img src={logoUrl} alt="Morning Coffee Labs" />
-          </Link>
+          </a>
         </div>
 
         <nav className="header-nav">
-          <Link className={isActive("/") ? "active" : ""} to="/">
-            {t("header.nav.home")}
-          </Link>
+          <a href={navExternal[0].href}>{t("header.nav.home")}</a>
+          <a href={navExternal[1].href}>{t("header.nav.services")}</a>
+          <a href={navExternal[2].href}>{t("header.nav.about")}</a>
+          <a href={navExternal[3].href}>{t("header.nav.contact")}</a>
 
-          {/* Ren label-endring: /idebank beholdes */}
-          <Link className={isActive("/idebank") ? "active" : ""} to="/idebank">
-            {t("header.nav.services")}
-          </Link>
-
-          <Link className={isActive("/om") ? "active" : ""} to="/om">
-            {t("header.nav.about")}
-          </Link>
-          <Link className={isActive("/kontakt") ? "active" : ""} to="/kontakt">
-            {t("header.nav.contact")}
-          </Link>
+          {/* Progress blir igjen her på managesystem.no */}
           <Link className={isActive("/progress") ? "active" : ""} to="/progress">
             {t("header.nav.progress")}
           </Link>
         </nav>
 
         <div className="header-actions">
-          {/* Språk-toggle (super enkel, skalerbar) */}
           <button
             type="button"
             className="theme-toggle"
@@ -91,7 +99,9 @@ const Header: React.FC = () => {
             aria-label={t("header.lang.aria")}
             title={t("header.lang.label")}
           >
-            <span className="theme-icon" aria-hidden="true">🌐</span>
+            <span className="theme-icon" aria-hidden="true">
+              🌐
+            </span>
             <span className="theme-label">
               {lang === "no" ? t("header.lang.nb") : t("header.lang.en")}
             </span>
@@ -101,14 +111,24 @@ const Header: React.FC = () => {
             type="button"
             className="theme-toggle"
             onClick={toggleTheme}
-            aria-label={theme === "dark" ? t("header.theme.ariaToLight") : t("header.theme.ariaToDark")}
-            title={theme === "dark" ? t("header.theme.titleLight") : t("header.theme.titleDark")}
+            aria-label={
+              theme === "dark"
+                ? t("header.theme.ariaToLight")
+                : t("header.theme.ariaToDark")
+            }
+            title={
+              theme === "dark"
+                ? t("header.theme.titleLight")
+                : t("header.theme.titleDark")
+            }
           >
             <span className="theme-icon" aria-hidden="true">
               {theme === "dark" ? "🌙" : "☀️"}
             </span>
             <span className="theme-label">
-              {theme === "dark" ? t("header.theme.labelDark") : t("header.theme.labelLight")}
+              {theme === "dark"
+                ? t("header.theme.labelDark")
+                : t("header.theme.labelLight")}
             </span>
           </button>
 
@@ -119,38 +139,52 @@ const Header: React.FC = () => {
       </header>
 
       <div className={`mobile-menu ${open ? "open" : ""}`}>
-        <Link to="/" onClick={closeMenu}>
+        <a href={navExternal[0].href} onClick={closeMenu}>
           {t("header.nav.home")}
-        </Link>
+        </a>
 
-        <Link to="/idebank" onClick={closeMenu}>
+        <a href={navExternal[1].href} onClick={closeMenu}>
           {t("header.nav.services")}
-        </Link>
+        </a>
 
-        <Link to="/om" onClick={closeMenu}>
+        <a href={navExternal[2].href} onClick={closeMenu}>
           {t("header.nav.about")}
-        </Link>
-        <Link to="/kontakt" onClick={closeMenu}>
+        </a>
+
+        <a href={navExternal[3].href} onClick={closeMenu}>
           {t("header.nav.contact")}
-        </Link>
+        </a>
+
         <Link to="/progress" onClick={closeMenu}>
           {t("header.nav.progress")}
         </Link>
 
-        {/* Språk i mobilmeny (samme stil) */}
-        <button type="button" className="theme-toggle mobile" onClick={toggleLang}>
-          <span className="theme-icon" aria-hidden="true">🌐</span>
+        <button
+          type="button"
+          className="theme-toggle mobile"
+          onClick={toggleLang}
+        >
+          <span className="theme-icon" aria-hidden="true">
+            🌐
+          </span>
           <span className="theme-label">
-            {t("header.lang.label")}: {lang === "no" ? t("header.lang.nb") : t("header.lang.en")}
+            {t("header.lang.label")}:{" "}
+            {lang === "no" ? t("header.lang.nb") : t("header.lang.en")}
           </span>
         </button>
 
-        <button type="button" className="theme-toggle mobile" onClick={toggleTheme}>
+        <button
+          type="button"
+          className="theme-toggle mobile"
+          onClick={toggleTheme}
+        >
           <span className="theme-icon" aria-hidden="true">
             {theme === "dark" ? "🌙" : "☀️"}
           </span>
           <span className="theme-label">
-            {theme === "dark" ? t("header.theme.mobileDark") : t("header.theme.mobileLight")}
+            {theme === "dark"
+              ? t("header.theme.mobileDark")
+              : t("header.theme.mobileLight")}
           </span>
         </button>
       </div>
