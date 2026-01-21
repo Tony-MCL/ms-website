@@ -6,6 +6,8 @@ import Footer from "./components/Footer";
 import WatermarkLayer from "./components/WatermarkLayer";
 
 import ProgressPage from "./pages/ProgressPage";
+import ProgressOverviewPage from "./pages/ProgressOverviewPage";
+import ProgressScreenshotsPage from "./pages/ProgressScreenshotsPage";
 
 const App: React.FC = () => {
   return (
@@ -16,8 +18,13 @@ const App: React.FC = () => {
 
       <div className="app-content">
         <Routes>
-          {/* Manage System: vi hoster kun Progress her */}
+          {/* Manage System: Progress-universet */}
           <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/progress/oversikt" element={<ProgressOverviewPage />} />
+          <Route
+            path="/progress/skjermbilder"
+            element={<ProgressScreenshotsPage />}
+          />
 
           {/* Alt annet sendes til /progress */}
           <Route path="/" element={<Navigate to="/progress" replace />} />
