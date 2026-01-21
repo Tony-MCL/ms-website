@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 
 // Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
@@ -98,6 +99,7 @@ const ProgressPage: React.FC = () => {
           ctaApp: "Gå til Progress-appen",
           backToMcl: "← Tilbake til Morning Coffee Labs",
           contactCta: "Kontakt oss →",
+          comingSoon: "Kommer snart",
         }
       : {
           heroTagline: "Project planning without the noise.",
@@ -166,7 +168,10 @@ const ProgressPage: React.FC = () => {
           ctaApp: "Open the Progress app",
           backToMcl: "← Back to Morning Coffee Labs",
           contactCta: "Contact us →",
+          comingSoon: "Coming soon",
         };
+
+  const disabled = PROGRESS_APP_URL === "#";
 
   return (
     <main className="page">
@@ -195,10 +200,7 @@ const ProgressPage: React.FC = () => {
 
           <a
             href={mclHref("/kontakt")}
-            style={{
-              fontSize: "0.95rem",
-              textDecoration: "underline",
-            }}
+            style={{ fontSize: "0.95rem", textDecoration: "underline" }}
           >
             {copy.contactCta}
           </a>
@@ -258,32 +260,32 @@ const ProgressPage: React.FC = () => {
               alignItems: "center",
             }}
           >
-            {/* Steg 2: disse blir ekte undersider */}
-            <a className="hero-cta" href="#screenshots" aria-disabled="true">
+            <Link className="hero-cta" to="/progress/skjermbilder">
               {copy.ctaShots}
-            </a>
+            </Link>
 
-            <a
-              href="#about"
+            <Link
+              to="/progress/oversikt"
               style={{ textDecoration: "underline", fontWeight: 600 }}
-              aria-disabled="true"
             >
               {copy.ctaMore}
-            </a>
+            </Link>
 
-            <a
-              href="#pricing"
-              style={{ textDecoration: "underline", fontWeight: 600 }}
-              aria-disabled="true"
-            >
-              {copy.ctaPrices}
-            </a>
+            {/* Steg 3 */}
+            <span style={{ opacity: 0.7 }}>
+              {copy.ctaPrices} · {copy.comingSoon}
+            </span>
 
-            {/* Steg 3: kobles til faktisk app */}
             <a
               href={PROGRESS_APP_URL}
-              style={{ textDecoration: "underline", fontWeight: 600 }}
-              aria-disabled={PROGRESS_APP_URL === "#" ? "true" : undefined}
+              style={{
+                textDecoration: "underline",
+                fontWeight: 600,
+                opacity: disabled ? 0.6 : 1,
+                pointerEvents: disabled ? "none" : "auto",
+              }}
+              aria-disabled={disabled ? "true" : undefined}
+              title={disabled ? copy.comingSoon : undefined}
             >
               {copy.ctaApp}
             </a>
