@@ -9,9 +9,6 @@ function mclHref(path: string) {
   return `${MCL_ORIGIN}/#${p}`;
 }
 
-// TODO (Steg 3): Pek denne til faktisk app-URL når den er klar
-const PROGRESS_APP_URL = "#";
-
 const ProgressPage: React.FC = () => {
   const { t, lang } = useI18n();
 
@@ -30,26 +27,11 @@ const ProgressPage: React.FC = () => {
           whyLead:
             "Mange vet at de burde planlegge. Færre vet hva de faktisk får igjen for det.",
           whyBullets: [
-            {
-              title: "Oversikt",
-              body: "Hva skal gjøres – og i hvilken rekkefølge.",
-            },
-            {
-              title: "Forutsigbarhet",
-              body: "Hva skjer nå, og hva kommer senere.",
-            },
-            {
-              title: "Prioritering",
-              body: "Hva er viktig, og hva kan vente.",
-            },
-            {
-              title: "Fremdrift",
-              body: "En tydelig følelse av å komme videre.",
-            },
-            {
-              title: "Beslutningsgrunnlag",
-              body: "Du ser konsekvensene før du tar valgene.",
-            },
+            { title: "Oversikt", body: "Hva skal gjøres – og i hvilken rekkefølge." },
+            { title: "Forutsigbarhet", body: "Hva skjer nå, og hva kommer senere." },
+            { title: "Prioritering", body: "Hva er viktig, og hva kan vente." },
+            { title: "Fremdrift", body: "En tydelig følelse av å komme videre." },
+            { title: "Beslutningsgrunnlag", body: "Du ser konsekvensene før du tar valgene." },
           ],
           whyClose:
             "Progress hjelper deg å få dette på plass – raskt, visuelt og uten friksjon.",
@@ -99,7 +81,6 @@ const ProgressPage: React.FC = () => {
           ctaApp: "Gå til Progress-appen",
           backToMcl: "← Tilbake til Morning Coffee Labs",
           contactCta: "Kontakt oss →",
-          comingSoon: "Kommer snart",
         }
       : {
           heroTagline: "Project planning without the noise.",
@@ -163,15 +144,12 @@ const ProgressPage: React.FC = () => {
           seeTitle: "Want to see how Progress actually works?",
           seeLead: "Progress is best when you see it in action.",
           ctaShots: "View screenshots",
-          ctaMore: "Learn how Progress works",
+          ctaMore: "Learn how it works",
           ctaPrices: "Pricing & license",
           ctaApp: "Open the Progress app",
           backToMcl: "← Back to Morning Coffee Labs",
           contactCta: "Contact us →",
-          comingSoon: "Coming soon",
         };
-
-  const disabled = PROGRESS_APP_URL === "#";
 
   return (
     <main className="page">
@@ -271,24 +249,19 @@ const ProgressPage: React.FC = () => {
               {copy.ctaMore}
             </Link>
 
-            {/* Steg 3 */}
-            <span style={{ opacity: 0.7 }}>
-              {copy.ctaPrices} · {copy.comingSoon}
-            </span>
+            <Link
+              to="/progress/priser"
+              style={{ textDecoration: "underline", fontWeight: 600 }}
+            >
+              {copy.ctaPrices}
+            </Link>
 
-            <a
-              href={PROGRESS_APP_URL}
-              style={{
-                textDecoration: "underline",
-                fontWeight: 600,
-                opacity: disabled ? 0.6 : 1,
-                pointerEvents: disabled ? "none" : "auto",
-              }}
-              aria-disabled={disabled ? "true" : undefined}
-              title={disabled ? copy.comingSoon : undefined}
+            <Link
+              to="/progress/app"
+              style={{ textDecoration: "underline", fontWeight: 600 }}
             >
               {copy.ctaApp}
-            </a>
+            </Link>
           </div>
 
           <p style={{ marginTop: "1.25rem", marginBottom: 0 }}>
