@@ -8,6 +8,8 @@ import WatermarkLayer from "./components/WatermarkLayer";
 import ProgressPage from "./pages/ProgressPage";
 import ProgressOverviewPage from "./pages/ProgressOverviewPage";
 import ProgressScreenshotsPage from "./pages/ProgressScreenshotsPage";
+import ProgressPricingPage from "./pages/ProgressPricingPage";
+import ProgressAppPage from "./pages/ProgressAppPage";
 
 const App: React.FC = () => {
   return (
@@ -25,6 +27,8 @@ const App: React.FC = () => {
             path="/progress/skjermbilder"
             element={<ProgressScreenshotsPage />}
           />
+          <Route path="/progress/priser" element={<ProgressPricingPage />} />
+          <Route path="/progress/app" element={<ProgressAppPage />} />
 
           {/* Alt annet sendes til /progress */}
           <Route path="/" element={<Navigate to="/progress" replace />} />
