@@ -188,8 +188,6 @@ const ProgressOverviewPage: React.FC = () => {
                   overflow: "hidden",
                   border: "1px solid rgba(255,255,255,0.08)",
                   background: "rgba(0,0,0,0.06)",
-
-                  // 🔒 Fast bilde-ramme (hindrer varierende flishøyde)
                   aspectRatio: "16 / 9",
                   width: "100%",
                 }}
@@ -206,8 +204,6 @@ const ProgressOverviewPage: React.FC = () => {
                       width: "100%",
                       height: "100%",
                       display: "block",
-
-                      // 🎯 Skaler bildet inn i ramma uten å endre flishøyde
                       objectFit: "contain",
                     }}
                   />
@@ -243,7 +239,6 @@ const ProgressOverviewPage: React.FC = () => {
             </button>
           );
 
-          // Annenhver: (fakta + bilde), så (bilde + fakta)
           return idx % 2 === 0 ? (
             <React.Fragment key={`row-${idx}`}>
               {factCard}
@@ -273,12 +268,10 @@ const ProgressOverviewPage: React.FC = () => {
           onClick={() => setOpenIndex(null)}
           style={{
             position: "fixed",
-            // 👇 legg overlay under headeren (header er fixed)
             top: "var(--header-height)",
             left: 0,
             right: 0,
             bottom: 0,
-
             background: "rgba(0,0,0,0.75)",
             display: "flex",
             alignItems: "center",
@@ -295,8 +288,6 @@ const ProgressOverviewPage: React.FC = () => {
               overflow: "hidden",
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.10)",
-
-              // 👇 behold alt innenfor tilgjengelig høyde (etter header)
               maxHeight: "calc(100vh - var(--header-height) - 2rem)",
               display: "flex",
               flexDirection: "column",
@@ -335,17 +326,15 @@ const ProgressOverviewPage: React.FC = () => {
             <div
               style={{
                 background: "rgba(0,0,0,0.08)",
-
-                // 👇 dette området tar resten av plassen
                 flex: "1 1 auto",
                 minHeight: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 padding: "0.75rem",
 
-                // ✅ Viktig: aldri klipp store bilder – scroll/contain i stedet
+                // ✅ Viktig: scroll/contain uten "center"-triks som gjør at toppen blir utilgjengelig
                 overflow: "auto",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
               }}
             >
               {missing[openIndex] ? (
@@ -385,6 +374,9 @@ const ProgressOverviewPage: React.FC = () => {
                     maxHeight: "100%",
                     width: "auto",
                     height: "auto",
+
+                    // ✅ Hold små bilder pent sentrert horisontalt
+                    margin: "0 auto",
                   }}
                 />
               )}
