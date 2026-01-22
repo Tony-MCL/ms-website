@@ -185,22 +185,22 @@ const ProgressPage: React.FC = () => {
         </div>
       </section>
 
-      {/* WHY */}
+      {/* WHY (nå samlet i én flis) */}
       <section className="intro-grid two-columns" style={{ marginTop: 0 }}>
         <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
           <h3 style={{ marginTop: 0 }}>{copy.whyTitle}</h3>
-          <p style={{ marginBottom: 0 }}>{copy.whyLead}</p>
-        </div>
 
-        {copy.whyBullets.map((b) => (
-          <div className="intro-card" key={b.title}>
-            <h3 style={{ marginTop: 0 }}>{b.title}</h3>
-            <p>{b.body}</p>
-          </div>
-        ))}
+          <p style={{ marginTop: "0.5rem" }}>{copy.whyLead}</p>
 
-        <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <p style={{ margin: 0, maxWidth: 980 }}>{copy.whyClose}</p>
+          <ul style={{ marginTop: "0.75rem", paddingLeft: "1.25rem" }}>
+            {copy.whyBullets.map((b) => (
+              <li key={b.title} style={{ marginBottom: "0.45rem" }}>
+                <strong>{b.title}</strong> – {b.body}
+              </li>
+            ))}
+          </ul>
+
+          <p style={{ marginBottom: 0, marginTop: "0.75rem" }}>{copy.whyClose}</p>
         </div>
       </section>
 
