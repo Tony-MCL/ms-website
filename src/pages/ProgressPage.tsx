@@ -42,35 +42,36 @@ const ProgressPage: React.FC = () => {
             {
               title: "Prosjektledere",
               body:
-                "Planlegg aktiviteter, avhengigheter og milepæler – uten å drukne i tunge verktøy eller metodikk.",
+                "Når flere aktiviteter henger sammen, og du må se rekkefølge, milepæler og frister – og kunne justere uten at alt faller fra hverandre.",
             },
             {
               title: "Salgsrepresentanter",
               body:
-                "Hold oversikt over tilbud, oppfølging og interne frister i parallelle salgsprosjekter.",
+                "Når et tilbud har mange del-løp: innhenting, oppfølging, avklaringer og interne frister – og du trenger oversikt på hva som haster nå og hva som venter.",
             },
             {
               title: "Lærere",
               body:
-                "Planlegg undervisningsløp, perioder og innleveringer – enkelt å justere underveis.",
+                "Når undervisning, perioder og innleveringer skal henge sammen over tid – og du vil kunne flytte på ting uten å miste oversikten.",
             },
             {
               title: "Elever og studenter",
               body:
-                "Strukturér semesteret, oppgaver og eksamensperioder slik at arbeidsmengden blir håndterbar.",
+                "Når du har flere oppgaver og frister samtidig – og trenger en plan som gjør arbeidsmengden håndterbar uke for uke.",
             },
             {
               title: "Reisende",
               body:
-                "Bygg reiseplaner med tydelig tidsløp – transport, opphold og aktiviteter i sammenheng.",
+                "Når en reise består av et tidsløp med transport, opphold og aktiviteter – og du vil se helheten og unngå «hull» i planen.",
             },
             {
               title: "Privatpersoner",
               body:
-                "Planlegg større hendelser, oppussing eller flytting – eller rett og slett hverdagen.",
+                "Når noe skal gjennomføres i flere steg – oppussing, flytting eller arrangement – og du vil se hva som kommer først og hva som må bli ferdig til slutt.",
             },
           ],
-          tilesNote: "Hvis det må planlegges – passer Progress.",
+          tilesNote:
+            "Hvis det må planlegges – passer Progress.\nUansett rolle handler det om det samme: å se rekkefølgen, holde frister og gjøre fremdrift synlig.",
 
           seeTitle: "Vil du se hvordan Progress faktisk fungerer?",
           seeLead: "Progress er best når du ser det i bruk.",
@@ -103,44 +104,42 @@ const ProgressPage: React.FC = () => {
             { title: "Better decisions", body: "See consequences before you commit." },
           ],
           whyClose:
-            "Progress helps you get this in place — fast, visual, and low-friction.",
+            "Progress helps you put this into practice — by making progress visible, easy to understand, and simple to adjust as things change.\n\nThe same need shows up in many different situations. Below are a few typical examples.",
 
-          audienceTitle: "Who is Progress for?",
-          audienceLead:
-            "Progress isn’t built for one role. It’s built for anyone who needs to plan time, tasks, and dependencies.",
           tiles: [
             {
               title: "Project managers",
               body:
-                "Plan activities, dependencies, and milestones — without drowning in heavy tools or methodology.",
+                "When multiple activities depend on each other, and you need to see sequence, milestones, and deadlines — and adjust without everything falling apart.",
             },
             {
               title: "Sales reps",
               body:
-                "Keep track of quotes, follow-ups, and internal deadlines across parallel sales processes.",
+                "When a quote has many moving parts: sourcing, follow-ups, clarifications, and internal deadlines — and you need to know what matters now and what can wait.",
             },
             {
               title: "Teachers",
               body:
-                "Plan course flow, periods, and submissions — easy to adjust as reality changes.",
+                "When lessons, periods, and submissions need to connect over time — and you want to move things around without losing the overview.",
             },
             {
               title: "Students",
               body:
-                "Structure the semester, assignments, and exam periods to make workload manageable.",
+                "When you have several assignments and deadlines at once — and need a plan that makes the workload manageable week by week.",
             },
             {
               title: "Travelers",
               body:
-                "Build travel plans with a clear timeline — transport, stays, and activities connected.",
+                "When a trip is a timeline of transport, stays, and activities — and you want to see the whole plan and avoid gaps.",
             },
             {
               title: "Personal planning",
               body:
-                "Plan events, renovations, moving — or simply everyday life with more clarity.",
+                "When something happens in stages — renovations, moving, or events — and you want to see what comes first and what must be finished at the end.",
             },
           ],
-          tilesNote: "If it needs planning — Progress fits.",
+          tilesNote:
+            "If it needs planning — Progress fits.\nNo matter the role, it’s the same thing: see the sequence, keep deadlines, and make progress visible.",
 
           seeTitle: "Want to see how Progress actually works?",
           seeLead: "Progress is best when you see it in action.",
@@ -202,13 +201,14 @@ const ProgressPage: React.FC = () => {
             ))}
           </ul>
 
-          <p style={{ marginBottom: 0, marginTop: "0.75rem" }}>{copy.whyClose}</p>
+          <p style={{ marginBottom: 0, marginTop: "0.75rem", whiteSpace: "pre-line" }}>
+            {copy.whyClose}
+          </p>
         </div>
       </section>
 
-      {/* AUDIENCE */}
+      {/* TILES */}
       <section className="intro-grid two-columns">
-
         {copy.tiles.map((tile) => (
           <div className="intro-card" key={tile.title}>
             <h3 style={{ marginTop: 0 }}>{tile.title}</h3>
@@ -217,7 +217,7 @@ const ProgressPage: React.FC = () => {
         ))}
 
         <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <p style={{ margin: 0 }}>{copy.tilesNote}</p>
+          <p style={{ margin: 0, whiteSpace: "pre-line" }}>{copy.tilesNote}</p>
         </div>
       </section>
 
