@@ -36,11 +36,8 @@ const ProgressPage: React.FC = () => {
             { title: "Beslutningsgrunnlag", body: "Du ser konsekvensene før du tar valgene." },
           ],
           whyClose:
-            "Progress hjelper deg å få dette på plass – raskt, visuelt og uten friksjon.",
+            "Progress hjelper deg å få dette på plass i praksis – ved å gjøre fremdrift synlig, forståelig og enkel å justere underveis.\n\nDet samme behovet dukker opp i mange ulike situasjoner. Under ser du noen typiske eksempler.",
 
-          audienceTitle: "Hvem er Progress for?",
-          audienceLead:
-            "Progress er ikke bygget for én bestemt rolle. Det er bygget for alle som trenger å planlegge tid, oppgaver og sammenheng.",
           tiles: [
             {
               title: "Prosjektledere",
@@ -211,10 +208,6 @@ const ProgressPage: React.FC = () => {
 
       {/* AUDIENCE */}
       <section className="intro-grid two-columns">
-        <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <h3 style={{ marginTop: 0 }}>{copy.audienceTitle}</h3>
-          <p style={{ marginBottom: 0, maxWidth: 980 }}>{copy.audienceLead}</p>
-        </div>
 
         {copy.tiles.map((tile) => (
           <div className="intro-card" key={tile.title}>
