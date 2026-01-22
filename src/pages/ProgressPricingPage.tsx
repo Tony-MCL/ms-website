@@ -33,9 +33,10 @@ const ProgressPricingPage: React.FC = () => {
     ? "Start uten friksjon. Free krever ingen registrering – du kan åpne Progress og planlegge med en gang."
     : "Start with zero friction. Free requires no registration — open Progress and plan immediately.";
 
+  // ✅ Teaser: flere prosjekter samtidig / flyt
   const proLead = isNo
-    ? "For deg som bruker Progress jevnlig og vil ha full flyt med skylagring og eksport."
-    : "For regular use with full workflow, cloud storage, and exports.";
+    ? "For deg som bruker Progress jevnlig – spesielt hvis du jobber i flere prosjekter samtidig og vil ha full flyt med skylagring og eksport."
+    : "For regular use — especially if you work across multiple projects and want the full workflow with cloud storage and exports.";
 
   const freeWhatYouGetTitle = isNo ? "Dette får du i Free" : "What you get in Free";
   const freeWhatYouGet = isNo
@@ -77,9 +78,10 @@ const ProgressPricingPage: React.FC = () => {
   const buyLabel = isNo ? "Kjøp Pro-lisens" : "Buy Pro license";
   const soon = isNo ? "Kommer snart" : "Coming soon";
 
+  // ✅ Ny bunntekst (etter lansering): videreutvikling + lisensstruktur
   const note = isNo
-    ? "Priser og endelig innhold i Pro kan justeres frem mot lansering. Målet er enkelhet, ikke forvirring."
-    : "Pricing and final Pro scope may be adjusted before launch. The goal is simplicity, not complexity.";
+    ? "Progress vil videreutvikles fortløpende. Nye funksjoner kan på sikt danne grunnlag for et utvidet lisensutvalg. Pro vil under ingen omstendigheter miste funksjonalitet – det du kjøper i dag forblir tilgjengelig."
+    : "Progress will keep evolving. New features may later support an expanded set of license tiers. Pro will never lose functionality — what you buy today stays available.";
 
   const back = isNo ? "← Tilbake til Progress" : "← Back to Progress";
   const openApp = isNo ? "Åpne Progress-appen" : "Open the Progress app";
