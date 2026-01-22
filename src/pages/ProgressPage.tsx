@@ -19,9 +19,11 @@ const ProgressPage: React.FC = () => {
           heroLead:
             "Progress er et enkelt verktøy for å planlegge det som faktisk må bli gjort – uten overflødige funksjoner, kompliserte oppsett eller unødvendige begreper.",
           heroLead2:
-            "En fremdriftsplan handler ikke om prosjektstyring som fag. Den handler om oversikt, prioritering og å komme i mål.",
+            "En fremdriftsplan handler om oversikt, prioritering og å komme i mål. Den har alltid vært en naturlig del av hvordan mennesker planlegger arbeid – lenge før det fantes metoder, verktøy og begreper for prosjektstyring.",
           heroLead3:
-            "Progress er laget for mennesker som trenger struktur i hverdagen – enten det er et prosjekt, et semester, et salgsarbeid eller en privat plan.",
+            "Når noe skal bygges, læres eller gjennomføres over tid, oppstår det samme behovet igjen og igjen: å se helheten, forstå rekkefølgen – og vite når noe faktisk er ferdig.",
+          heroLead4:
+            "Progress er laget for å støtte dette behovet i praksis – enten det er et prosjekt, et semester, et salgsarbeid eller en privat plan.",
 
           whyTitle: "Hva gir en fremdriftsplan deg egentlig?",
           whyLead:
@@ -87,9 +89,11 @@ const ProgressPage: React.FC = () => {
           heroLead:
             "Progress is a simple tool for planning what actually needs to get done — without unnecessary features, complicated setup, or buzzwords.",
           heroLead2:
-            "A schedule isn’t about project management as a discipline. It’s about clarity, prioritization, and getting things over the finish line.",
+            "A schedule is about clarity, prioritization, and getting things over the finish line. It has always been a natural part of how people plan work — long before project management became a discipline with methods, tools, and terminology.",
           heroLead3:
-            "Progress is built for people who need structure in everyday work — whether it’s a project, a semester, a sales process, or a personal plan.",
+            "When something needs to be built, learned, or delivered over time, the same need appears again and again: to see the whole picture, understand the sequence — and know when something is truly finished.",
+          heroLead4:
+            "Progress is built to support that need in practice — whether it’s a project, a semester, a sales process, or a personal plan.",
 
           whyTitle: "What do you actually gain from a schedule?",
           whyLead:
@@ -164,6 +168,7 @@ const ProgressPage: React.FC = () => {
         <p style={{ maxWidth: 980 }}>{copy.heroLead}</p>
         <p style={{ maxWidth: 980, marginTop: "0.75rem" }}>{copy.heroLead2}</p>
         <p style={{ maxWidth: 980, marginTop: "0.75rem" }}>{copy.heroLead3}</p>
+        <p style={{ maxWidth: 980, marginTop: "0.75rem" }}>{copy.heroLead4}</p>
 
         <div
           style={{
