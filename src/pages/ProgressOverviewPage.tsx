@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 
@@ -9,75 +9,122 @@ function mclHref(path: string) {
   return `${MCL_ORIGIN}/#${p}`;
 }
 
+type Pair = {
+  factTitle: string;
+  factBody: string;
+  imgSrc: string;
+  imgAlt: string;
+  imgCaption: string;
+};
+
+const assetBase = import.meta.env.BASE_URL || "/";
+
 const ProgressOverviewPage: React.FC = () => {
   const { lang } = useI18n();
 
-  const copy =
-    lang === "no"
-      ? {
-          title: "Slik fungerer Progress",
-          lead:
-            "Progress er laget for rask planlegging i hverdagen – med tydelig struktur, lav friksjon og en visuell plan som alltid henger sammen med dataene du skriver inn.",
-          blocks: [
-            {
-              title: "Tabellen er kilden til sannhet",
-              body:
-                "Du skriver inn aktivitet, datoer og informasjon i tabellen. Gantt-visningen viser nøyaktig de samme radene – som tidsblokker. Det betyr færre overraskelser og mindre manuelt arbeid.",
-            },
-            {
-              title: "Visuell plan som er lett å lese",
-              body:
-                "Du får en plan som er enkel å presentere for andre – og enkel å forstå for deg selv. Målet er ro og oversikt, ikke mer administrasjon.",
-            },
-            {
-              title: "Rask å endre når virkeligheten endrer seg",
-              body:
-                "Planer blir aldri perfekte. Det viktige er at det går fort å oppdatere og justere, uten at du må “redesigne” alt fra bunnen av.",
-            },
-            {
-              title: "Bygget for utskrift og deling",
-              body:
-                "En plan har ofte en mottaker. Progress er laget med tanke på at du skal kunne vise, dele og skrive ut – uten å miste lesbarhet.",
-            },
-          ],
-          ctaTitle: "Vil du se det i praksis?",
-          ctaLead: "Skjermbilder gir ofte mer mening enn lange forklaringer.",
-          ctaShots: "Se skjermbilder",
-          ctaBack: "← Tilbake til Progress",
-          ctaMcl: "Kontakt oss →",
-        }
-      : {
-          title: "How Progress works",
-          lead:
-            "Progress is built for fast, everyday planning — with a clear structure, low friction, and a visual plan that always matches the data you enter.",
-          blocks: [
-            {
-              title: "The table is the source of truth",
-              body:
-                "You enter activities, dates, and details in the table. The Gantt view shows the exact same rows — as time blocks. Fewer surprises, less manual work.",
-            },
-            {
-              title: "A visual plan that’s easy to read",
-              body:
-                "You get a plan that’s easy to present to others — and easy to understand yourself. The goal is calm clarity, not more admin.",
-            },
-            {
-              title: "Fast to adjust when reality changes",
-              body:
-                "Plans are never perfect. What matters is being able to update and adapt quickly without rebuilding everything from scratch.",
-            },
-            {
-              title: "Built for sharing and printing",
-              body:
-                "A plan often has an audience. Progress is designed so you can present, share, and print without losing readability.",
-            },
-          ],
-          ctaTitle: "Want to see it in action?",
-          ctaLead: "Screenshots often explain more than long paragraphs.",
-          ctaShots: "View screenshots",
-          ctaBack: "← Back to Progress",
-          ctaMcl: "Contact us →",
-        };
+  const isNo = lang === "no";
+
+  const copy = isNo
+    ? {
+        title: "Slik fungerer Progress",
+        lead:
+          "Her er den korte forklaringen – med skjermbilder. Progress er laget for å gjøre fremdrift synlig, forståelig og enkel å justere underveis.",
+        backToProgress: "← Tilbake til Progress",
+        contactCta: "Kontakt oss →",
+        closeLabel: "Lukk",
+        imageViewerLabel: "Bildevisning",
+        screenshotLabel: "Skjermbilde",
+        missingTitle: "Mangler bilde",
+        missingBodyPrefix: "Legg filen i",
+        pairs: [
+          {
+            factTitle: "Tabellen er kilden til sannhet",
+            factBody:
+              "Du skriver inn aktivitet, datoer og informasjon i tabellen. Gantt-visningen viser nøyaktig de samme radene – som tidsblokker. Det betyr færre overraskelser og mindre manuelt arbeid.",
+            imgSrc: `${assetBase}progress/progress-01.png`,
+            imgAlt: "Skjermbilde: Plan i tabell og Gantt",
+            imgCaption: "Tabell og Gantt henger sammen – samme rader, samme plan.",
+          },
+          {
+            factTitle: "Visuell plan som er lett å lese",
+            factBody:
+              "Du får en plan som er enkel å presentere for andre – og enkel å forstå for deg selv. Målet er ro og oversikt, ikke mer administrasjon.",
+            imgSrc: `${assetBase}progress/progress-02.png`,
+            imgAlt: "Skjermbilde: Oversikt og lesbarhet",
+            imgCaption: "Lesbarhet først: rolig layout som er enkel å dele.",
+          },
+          {
+            factTitle: "Rask å endre når virkeligheten endrer seg",
+            factBody:
+              "Planer blir aldri perfekte. Det viktige er at det går fort å oppdatere og justere, uten at du må “redesigne” alt fra bunnen av.",
+            imgSrc: `${assetBase}progress/progress-03.png`,
+            imgAlt: "Skjermbilde: Utskrift / deling",
+            imgCaption: "Bygget for deling og utskrift – uten at det blir rot.",
+          },
+          {
+            factTitle: "Bygget for utskrift og deling",
+            factBody:
+              "En plan har ofte en mottaker. Progress er laget med tanke på at du skal kunne vise, dele og skrive ut – uten å miste lesbarhet.",
+            imgSrc: `${assetBase}progress/progress-04.png`,
+            imgAlt: "Skjermbilde: Detaljer og flyt",
+            imgCaption: "Detaljer når du trenger det – uten å miste flyten.",
+          },
+        ] as Pair[],
+        backToMcl: "← Tilbake til Morning Coffee Labs",
+      }
+    : {
+        title: "How Progress works",
+        lead:
+          "Here’s the short explanation — with screenshots. Progress is built to make progress visible, easy to understand, and simple to adjust as things change.",
+        backToProgress: "← Back to Progress",
+        contactCta: "Contact us →",
+        closeLabel: "Close",
+        imageViewerLabel: "Image viewer",
+        screenshotLabel: "Screenshot",
+        missingTitle: "Missing image",
+        missingBodyPrefix: "Place the file at",
+        pairs: [
+          {
+            factTitle: "The table is the source of truth",
+            factBody:
+              "You enter activities, dates, and details in the table. The Gantt view shows the exact same rows — as time blocks. Fewer surprises, less manual work.",
+            imgSrc: `${assetBase}progress/progress-01.png`,
+            imgAlt: "Screenshot: Table and Gantt plan",
+            imgCaption: "Table and Gantt stay aligned — same rows, same plan.",
+          },
+          {
+            factTitle: "A visual plan that’s easy to read",
+            factBody:
+              "You get a plan that’s easy to present to others — and easy to understand yourself. The goal is calm clarity, not more admin.",
+            imgSrc: `${assetBase}progress/progress-02.png`,
+            imgAlt: "Screenshot: Overview and readability",
+            imgCaption: "Readability first: a calm layout that’s easy to share.",
+          },
+          {
+            factTitle: "Fast to adjust when reality changes",
+            factBody:
+              "Plans are never perfect. What matters is being able to update and adapt quickly without rebuilding everything from scratch.",
+            imgSrc: `${assetBase}progress/progress-03.png`,
+            imgAlt: "Screenshot: Print / sharing",
+            imgCaption: "Built for sharing and printing — without the clutter.",
+          },
+          {
+            factTitle: "Built for sharing and printing",
+            factBody:
+              "A plan often has an audience. Progress is designed so you can present, share, and print without losing readability.",
+            imgSrc: `${assetBase}progress/progress-04.png`,
+            imgAlt: "Screenshot: Details and flow",
+            imgCaption: "Details when you need them — without losing flow.",
+          },
+        ] as Pair[],
+        backToMcl: "← Back to Morning Coffee Labs",
+      };
+
+  // Lightbox state
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [missing, setMissing] = useState<Record<number, boolean>>({});
+
+  const pairs: Pair[] = useMemo(() => copy.pairs, [copy.pairs]);
 
   return (
     <main className="page">
@@ -96,42 +143,209 @@ const ProgressOverviewPage: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <Link className="hero-cta" to="/progress/skjermbilder">
-            {copy.ctaShots}
+          <Link className="hero-cta" to="/progress">
+            {copy.backToProgress}
           </Link>
 
           <a
             href={mclHref("/kontakt")}
             style={{ textDecoration: "underline", fontWeight: 600 }}
           >
-            {copy.ctaMcl}
+            {copy.contactCta}
           </a>
         </div>
-
-        <p style={{ marginTop: "1.25rem", marginBottom: 0 }}>
-          <Link to="/progress">{copy.ctaBack}</Link>
-        </p>
       </section>
 
+      {/* Kombinert: fakta ↔ bilde ↔ fakta ↔ bilde */}
       <section className="intro-grid two-columns" style={{ marginTop: 0 }}>
-        {copy.blocks.map((b) => (
-          <div className="intro-card" key={b.title}>
-            <h3 style={{ marginTop: 0 }}>{b.title}</h3>
-            <p style={{ marginBottom: 0 }}>{b.body}</p>
-          </div>
-        ))}
+        {pairs.map((p, idx) => {
+          const isMissing = !!missing[idx];
+
+          const factCard = (
+            <div className="intro-card" key={`fact-${idx}`}>
+              <h3 style={{ marginTop: 0 }}>{p.factTitle}</h3>
+              <p style={{ marginBottom: 0 }}>{p.factBody}</p>
+            </div>
+          );
+
+          const imageCard = (
+            <button
+              key={`img-${idx}`}
+              type="button"
+              className="intro-card"
+              onClick={() => setOpenIndex(idx)}
+              style={{
+                textAlign: "left",
+                cursor: "pointer",
+                padding: "1rem",
+                border: "none",
+                background: "var(--card-bg, rgba(255,255,255,0.06))",
+              }}
+            >
+              <div
+                style={{
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(0,0,0,0.06)",
+                }}
+              >
+                {!isMissing ? (
+                  <img
+                    src={p.imgSrc}
+                    alt={p.imgAlt}
+                    loading="lazy"
+                    style={{ width: "100%", display: "block" }}
+                    onError={() => setMissing((prev) => ({ ...prev, [idx]: true }))}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: "16 / 9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "1rem",
+                      opacity: 0.85,
+                    }}
+                  >
+                    <div style={{ maxWidth: 520 }}>
+                      <strong style={{ display: "block", marginBottom: 8 }}>
+                        {copy.missingTitle}
+                      </strong>
+                      <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+                        {copy.missingBodyPrefix}{" "}
+                        <code>{`public/progress/progress-0${idx + 1}.png`}</code>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>{p.imgCaption}</p>
+            </button>
+          );
+
+          // Annenhver: (fakta + bilde), så (bilde + fakta)
+          return idx % 2 === 0 ? (
+            <React.Fragment key={`row-${idx}`}>
+              {factCard}
+              {imageCard}
+            </React.Fragment>
+          ) : (
+            <React.Fragment key={`row-${idx}`}>
+              {imageCard}
+              {factCard}
+            </React.Fragment>
+          );
+        })}
 
         <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <h3 style={{ marginTop: 0 }}>{copy.ctaTitle}</h3>
-          <p style={{ marginBottom: 0 }}>{copy.ctaLead}</p>
-
-          <div style={{ marginTop: "1rem" }}>
-            <Link className="hero-cta" to="/progress/skjermbilder">
-              {copy.ctaShots}
-            </Link>
-          </div>
+          <p style={{ marginBottom: 0 }}>
+            <a href={mclHref("/")}>{copy.backToMcl}</a>
+          </p>
         </div>
       </section>
+
+      {/* Lightbox */}
+      {openIndex !== null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={copy.imageViewerLabel}
+          onClick={() => setOpenIndex(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(1200px, 100%)",
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "0.75rem 1rem",
+                borderBottom: "1px solid rgba(255,255,255,0.10)",
+              }}
+            >
+              <strong>
+                {copy.screenshotLabel} {openIndex + 1} / {pairs.length}
+              </strong>
+
+              <button
+                type="button"
+                onClick={() => setOpenIndex(null)}
+                style={{
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "transparent",
+                  color: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                {copy.closeLabel}
+              </button>
+            </div>
+
+            <div style={{ background: "rgba(0,0,0,0.08)" }}>
+              {missing[openIndex] ? (
+                <div
+                  style={{
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "1.25rem",
+                    opacity: 0.9,
+                  }}
+                >
+                  <div style={{ maxWidth: 520 }}>
+                    <strong style={{ display: "block", marginBottom: 8 }}>
+                      {copy.missingTitle}
+                    </strong>
+                    <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+                      {copy.missingBodyPrefix}{" "}
+                      <code>{`public/progress/progress-0${openIndex + 1}.png`}</code>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={pairs[openIndex].imgSrc}
+                  alt={pairs[openIndex].imgAlt}
+                  style={{ width: "100%", display: "block" }}
+                  onError={() =>
+                    setMissing((prev) => ({ ...prev, [openIndex]: true }))
+                  }
+                />
+              )}
+            </div>
+
+            <div style={{ padding: "0.9rem 1rem" }}>
+              <p style={{ margin: 0 }}>{pairs[openIndex].imgCaption}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
