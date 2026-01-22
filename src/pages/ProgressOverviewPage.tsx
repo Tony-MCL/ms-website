@@ -169,63 +169,79 @@ const ProgressOverviewPage: React.FC = () => {
           );
 
           const imageCard = (
-            <button
-              key={`img-${idx}`}
-              type="button"
-              className="intro-card"
-              onClick={() => setOpenIndex(idx)}
-              style={{
-                textAlign: "left",
-                cursor: "pointer",
-                padding: "1rem",
-                border: "none",
-                background: "var(--card-bg, rgba(255,255,255,0.06))",
-              }}
-            >
-              <div
-                style={{
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "rgba(0,0,0,0.06)",
-                }}
-              >
-                {!isMissing ? (
-                  <img
-                    src={p.imgSrc}
-                    alt={p.imgAlt}
-                    loading="lazy"
-                    style={{ width: "100%", display: "block" }}
-                    onError={() => setMissing((prev) => ({ ...prev, [idx]: true }))}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      aspectRatio: "16 / 9",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "1rem",
-                      opacity: 0.85,
-                    }}
-                  >
-                    <div style={{ maxWidth: 520 }}>
-                      <strong style={{ display: "block", marginBottom: 8 }}>
-                        {copy.missingTitle}
-                      </strong>
-                      <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-                        {copy.missingBodyPrefix}{" "}
-                        <code>{`public/progress/progress-0${idx + 1}.png`}</code>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+  <button
+    key={`img-${idx}`}
+    type="button"
+    className="intro-card"
+    onClick={() => setOpenIndex(idx)}
+    style={{
+      textAlign: "left",
+      cursor: "pointer",
+      padding: "1rem",
+      border: "none",
+      background: "var(--card-bg, rgba(255,255,255,0.06))",
+    }}
+  >
+    <div
+      style={{
+        borderRadius: 12,
+        overflow: "hidden",
+        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(0,0,0,0.06)",
 
-              <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>{p.imgCaption}</p>
-            </button>
-          );
+        // 🔒 Fast bilde-ramme (hindrer varierende flishøyde)
+        aspectRatio: "16 / 9",
+        width: "100%",
+      }}
+    >
+      {!isMissing ? (
+        <img
+          src={p.imgSrc}
+          alt={p.imgAlt}
+          loading="lazy"
+          onError={() =>
+            setMissing((prev) => ({ ...prev, [idx]: true }))
+          }
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "block",
+
+            // 🎯 Skaler bildet inn i ramma uten å endre flishøyde
+            objectFit: "contain",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            opacity: 0.85,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ maxWidth: 520 }}>
+            <strong style={{ display: "block", marginBottom: 8 }}>
+              {copy.missingTitle}
+            </strong>
+            <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+              {copy.missingBodyPrefix}{" "}
+              <code>{`public/progress/progress-0${idx + 1}.png`}</code>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+      {p.imgCaption}
+    </p>
+  </button>
+);
 
           // Annenhver: (fakta + bilde), så (bilde + fakta)
           return idx % 2 === 0 ? (
