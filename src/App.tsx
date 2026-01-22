@@ -7,7 +7,6 @@ import WatermarkLayer from "./components/WatermarkLayer";
 
 import ProgressPage from "./pages/ProgressPage";
 import ProgressOverviewPage from "./pages/ProgressOverviewPage";
-import ProgressScreenshotsPage from "./pages/ProgressScreenshotsPage";
 import ProgressPricingPage from "./pages/ProgressPricingPage";
 import ProgressAppPage from "./pages/ProgressAppPage";
 
@@ -23,10 +22,6 @@ const App: React.FC = () => {
           {/* Manage System: Progress-universet */}
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/progress/oversikt" element={<ProgressOverviewPage />} />
-          <Route
-            path="/progress/skjermbilder"
-            element={<ProgressScreenshotsPage />}
-          />
           <Route path="/progress/priser" element={<ProgressPricingPage />} />
           <Route path="/progress/app" element={<ProgressAppPage />} />
 
