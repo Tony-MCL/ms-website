@@ -169,79 +169,79 @@ const ProgressOverviewPage: React.FC = () => {
           );
 
           const imageCard = (
-  <button
-    key={`img-${idx}`}
-    type="button"
-    className="intro-card"
-    onClick={() => setOpenIndex(idx)}
-    style={{
-      textAlign: "left",
-      cursor: "pointer",
-      padding: "1rem",
-      border: "none",
-      background: "var(--card-bg, rgba(255,255,255,0.06))",
-    }}
-  >
-    <div
-      style={{
-        borderRadius: 12,
-        overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.08)",
-        background: "rgba(0,0,0,0.06)",
+            <button
+              key={`img-${idx}`}
+              type="button"
+              className="intro-card"
+              onClick={() => setOpenIndex(idx)}
+              style={{
+                textAlign: "left",
+                cursor: "pointer",
+                padding: "1rem",
+                border: "none",
+                background: "var(--card-bg, rgba(255,255,255,0.06))",
+              }}
+            >
+              <div
+                style={{
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(0,0,0,0.06)",
 
-        // 🔒 Fast bilde-ramme (hindrer varierende flishøyde)
-        aspectRatio: "16 / 9",
-        width: "100%",
-      }}
-    >
-      {!isMissing ? (
-        <img
-          src={p.imgSrc}
-          alt={p.imgAlt}
-          loading="lazy"
-          onError={() =>
-            setMissing((prev) => ({ ...prev, [idx]: true }))
-          }
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
+                  // 🔒 Fast bilde-ramme (hindrer varierende flishøyde)
+                  aspectRatio: "16 / 9",
+                  width: "100%",
+                }}
+              >
+                {!isMissing ? (
+                  <img
+                    src={p.imgSrc}
+                    alt={p.imgAlt}
+                    loading="lazy"
+                    onError={() =>
+                      setMissing((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
 
-            // 🎯 Skaler bildet inn i ramma uten å endre flishøyde
-            objectFit: "contain",
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "1rem",
-            opacity: 0.85,
-            textAlign: "center",
-          }}
-        >
-          <div style={{ maxWidth: 520 }}>
-            <strong style={{ display: "block", marginBottom: 8 }}>
-              {copy.missingTitle}
-            </strong>
-            <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-              {copy.missingBodyPrefix}{" "}
-              <code>{`public/progress/progress-0${idx + 1}.png`}</code>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                      // 🎯 Skaler bildet inn i ramma uten å endre flishøyde
+                      objectFit: "contain",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "1rem",
+                      opacity: 0.85,
+                      textAlign: "center",
+                    }}
+                  >
+                    <div style={{ maxWidth: 520 }}>
+                      <strong style={{ display: "block", marginBottom: 8 }}>
+                        {copy.missingTitle}
+                      </strong>
+                      <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+                        {copy.missingBodyPrefix}{" "}
+                        <code>{`public/progress/progress-0${idx + 1}.png`}</code>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-    <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-      {p.imgCaption}
-    </p>
-  </button>
-);
+              <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+                {p.imgCaption}
+              </p>
+            </button>
+          );
 
           // Annenhver: (fakta + bilde), så (bilde + fakta)
           return idx % 2 === 0 ? (
@@ -278,7 +278,7 @@ const ProgressOverviewPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-      
+
             background: "rgba(0,0,0,0.75)",
             display: "flex",
             alignItems: "center",
@@ -295,7 +295,7 @@ const ProgressOverviewPage: React.FC = () => {
               overflow: "hidden",
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.10)",
-      
+
               // 👇 behold alt innenfor tilgjengelig høyde (etter header)
               maxHeight: "calc(100vh - var(--header-height) - 2rem)",
               display: "flex",
@@ -315,7 +315,7 @@ const ProgressOverviewPage: React.FC = () => {
               <strong>
                 {copy.screenshotLabel} {openIndex + 1} / {pairs.length}
               </strong>
-      
+
               <button
                 type="button"
                 onClick={() => setOpenIndex(null)}
@@ -331,18 +331,21 @@ const ProgressOverviewPage: React.FC = () => {
                 {copy.closeLabel}
               </button>
             </div>
-      
+
             <div
               style={{
                 background: "rgba(0,0,0,0.08)",
-      
-                // 👇 dette området tar resten av plassen og skroller ved behov
+
+                // 👇 dette området tar resten av plassen
                 flex: "1 1 auto",
                 minHeight: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "0.75rem",
+
+                // ✅ Viktig: aldri klipp store bilder – scroll/contain i stedet
+                overflow: "auto",
               }}
             >
               {missing[openIndex] ? (
@@ -376,18 +379,17 @@ const ProgressOverviewPage: React.FC = () => {
                   }
                   style={{
                     display: "block",
-      
-                    // 👇 alltid skaler inn i tilgjengelig plass
-                    width: "100%",
-                    height: "100%",
+
+                    // ✅ Skaler ned til å passe (ingen klipping)
                     maxWidth: "100%",
                     maxHeight: "100%",
-                    objectFit: "contain",
+                    width: "auto",
+                    height: "auto",
                   }}
                 />
               )}
             </div>
-      
+
             <div style={{ padding: "0.9rem 1rem", flex: "0 0 auto" }}>
               <p style={{ margin: 0 }}>{pairs[openIndex].imgCaption}</p>
             </div>
