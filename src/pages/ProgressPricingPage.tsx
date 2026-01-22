@@ -23,39 +23,37 @@ const ProgressPricingPage: React.FC = () => {
 
   const title = isNo ? "Priser og lisens" : "Pricing & license";
   const lead = isNo
-    ? "Velg nivået som passer. Du kan starte gratis, teste flyt, og oppgradere når du vil."
-    : "Choose the level that fits. Start free, test the workflow, and upgrade anytime.";
+    ? "Velg nivået som passer. Du kan starte gratis og oppgradere når du vil."
+    : "Choose the level that fits. Start free and upgrade anytime.";
 
   const freeTitle = "Free";
   const proTitle = "Pro";
 
   const freeLead = isNo
-    ? "For deg som vil planlegge uten å betale – og fortsatt få en ryddig plan."
-    : "For planning at no cost — still clean and usable.";
+    ? "Start uten friksjon. Free krever ingen registrering – du kan åpne Progress og planlegge med en gang."
+    : "Start with zero friction. Free requires no registration — open Progress and plan immediately.";
 
   const proLead = isNo
-    ? "For deg som bruker Progress jevnlig og vil ha full funksjonalitet og flyt."
-    : "For regular use with full functionality and a smoother workflow.";
+    ? "For deg som bruker Progress jevnlig og vil ha full flyt med skylagring og eksport."
+    : "For regular use with full workflow, cloud storage, and exports.";
 
   const freeWhatYouGetTitle = isNo ? "Dette får du i Free" : "What you get in Free";
   const freeWhatYouGet = isNo
-    ? ["Full planlegging i tabell og Gantt", "Kan åpne prosjekter andre har eksportert"]
-    : ["Full planning in table + Gantt", "Can open projects exported by others"];
-
-  const freeLimitsTitle = isNo ? "Begrensninger i Free" : "Free limitations";
-  const freeLimits = isNo
     ? [
-        "Kun lokal lagring av ett prosjekt om gangen",
-        "Utskrift / PDF-eksport med vannmerke",
-        "Kan åpne eksporterte prosjekter, men kan ikke eksportere selv",
-        "Ingen eksport til .TSV",
+        "Lokal lagring, begrenset til ett prosjekt av gangen",
+        "Utskrift / pdf-eksport med vannmerke",
+        "Import av prosjekter eksportert fra Pro-brukere",
       ]
     : [
-        "Local-only storage of one project at a time",
+        "Local storage, limited to one project at a time",
         "Print / PDF export with watermark",
-        "Can open exported projects, but cannot export your own",
-        "No .TSV export",
+        "Import projects exported by Pro users",
       ];
+
+  const trialTitle = isNo ? "Prøv Pro gratis i 10 dager" : "Try Pro free for 10 days";
+  const trialBody = isNo
+    ? "Du kan teste full Pro-funksjonalitet i 10 dager – helt gratis. Det eneste du trenger å gjøre er å registrere deg med e-postadresse."
+    : "You can test full Pro functionality for 10 days — completely free. The only thing you need is to register with an email address.";
 
   const proWhatYouGetTitle = isNo ? "Dette får du i Pro" : "What you get in Pro";
   const proWhatYouGet = isNo
@@ -86,14 +84,6 @@ const ProgressPricingPage: React.FC = () => {
   const back = isNo ? "← Tilbake til Progress" : "← Back to Progress";
   const openApp = isNo ? "Åpne Progress-appen" : "Open the Progress app";
   const contact = isNo ? "Kontakt oss →" : "Contact us →";
-
-  const trialTitle = isNo ? "Trial / prøvetid" : "Trial period";
-  const trialBody = isNo
-    ? "Vi kan tilby en kort Pro-prøvetid for å teste skylagring, eksport og utskrift i egne prosjekter før kjøp."
-    : "We can offer a short Pro trial so you can test cloud storage, exports, and printing in real projects before purchase.";
-  const trialHint = isNo
-    ? "Dette aktiveres når checkout og lisensflyt er helt klar."
-    : "This will be enabled once checkout and the license flow are fully ready.";
 
   return (
     <main className="page">
@@ -141,6 +131,7 @@ const ProgressPricingPage: React.FC = () => {
           <strong style={{ display: "block", marginTop: "0.75rem" }}>
             {freeWhatYouGetTitle}
           </strong>
+
           <ul style={{ marginTop: "0.6rem", paddingLeft: "1.25rem" }}>
             {freeWhatYouGet.map((x) => (
               <li key={x} style={{ marginBottom: "0.35rem" }}>
@@ -149,16 +140,18 @@ const ProgressPricingPage: React.FC = () => {
             ))}
           </ul>
 
-          <strong style={{ display: "block", marginTop: "0.9rem" }}>
-            {freeLimitsTitle}
-          </strong>
-          <ul style={{ marginTop: "0.6rem", paddingLeft: "1.25rem", opacity: 0.92 }}>
-            {freeLimits.map((x) => (
-              <li key={x} style={{ marginBottom: "0.35rem" }}>
-                {x}
-              </li>
-            ))}
-          </ul>
+          <div
+            style={{
+              marginTop: "1rem",
+              paddingTop: "0.9rem",
+              borderTop: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <strong style={{ display: "block", marginBottom: 6 }}>
+              {trialTitle}
+            </strong>
+            <p style={{ margin: 0, opacity: 0.92 }}>{trialBody}</p>
+          </div>
         </div>
 
         {/* PRO */}
@@ -180,6 +173,7 @@ const ProgressPricingPage: React.FC = () => {
           <strong style={{ display: "block", marginTop: "0.75rem" }}>
             {proWhatYouGetTitle}
           </strong>
+
           <ul style={{ marginTop: "0.6rem", paddingLeft: "1.25rem" }}>
             {proWhatYouGet.map((x) => (
               <li key={x} style={{ marginBottom: "0.35rem" }}>
@@ -210,13 +204,6 @@ const ProgressPricingPage: React.FC = () => {
                 : "Purchase opens checkout and activates Pro on the license."}
             </div>
           </div>
-        </div>
-
-        {/* TRIAL (full bredde) */}
-        <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <h3 style={{ marginTop: 0 }}>{trialTitle}</h3>
-          <p style={{ marginBottom: "0.75rem" }}>{trialBody}</p>
-          <p style={{ margin: 0, opacity: 0.85 }}>{trialHint}</p>
         </div>
 
         {/* NOTE */}
