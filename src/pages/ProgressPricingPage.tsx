@@ -12,9 +12,9 @@ function mclHref(path: string) {
 // TODO: Sett inn faktisk checkout-lenke når den er klar
 const CHECKOUT_URL = "#";
 
-// TODO: Juster priser når dere har landet endelig nivå
-const PRICE_PRO_NO = "199 NOK / bruker / måned";
-const PRICE_PRO_EN = "199 NOK / user / month";
+// Priser
+const PRICE_PRO_INTRO_NO = "129 NOK / bruker / måned (eks. mva)";
+const PRICE_PRO_INTRO_EN = "129 NOK / user / month (ex. VAT)";
 
 const ProgressPricingPage: React.FC = () => {
   const { lang } = useI18n();
@@ -33,7 +33,6 @@ const ProgressPricingPage: React.FC = () => {
     ? "Start uten friksjon. Free krever ingen registrering – du kan åpne Progress og planlegge med en gang."
     : "Start with zero friction. Free requires no registration — open Progress and plan immediately.";
 
-  // ✅ Teaser: flere prosjekter samtidig / flyt
   const proLead = isNo
     ? "For deg som bruker Progress jevnlig – spesielt hvis du jobber i flere prosjekter samtidig og vil ha full flyt med skylagring og eksport."
     : "For regular use — especially if you work across multiple projects and want the full workflow with cloud storage and exports.";
@@ -42,7 +41,7 @@ const ProgressPricingPage: React.FC = () => {
   const freeWhatYouGet = isNo
     ? [
         "Lokal lagring, begrenset til ett prosjekt av gangen",
-        "Utskrift / pdf-eksport med vannmerke",
+        "Utskrift / PDF-eksport med vannmerke",
         "Import av prosjekter eksportert fra Pro-brukere",
       ]
     : [
@@ -60,7 +59,7 @@ const ProgressPricingPage: React.FC = () => {
   const proWhatYouGet = isNo
     ? [
         "Alt i Free",
-        "Skylagring av “ubegrenset” antall prosjekter",
+        "Skylagring av flere prosjekter",
         "Utskrift / PDF uten vannmerke",
         "Eksport av prosjekter (lagre lokalt hvor du vil) – åpne senere eller del med andre",
         "Eksport til .TSV",
@@ -68,20 +67,23 @@ const ProgressPricingPage: React.FC = () => {
       ]
     : [
         "Everything in Free",
-        "Cloud storage for a “unlimited” number of projects",
+        "Cloud storage for multiple projects",
         "Print / PDF with no watermark",
         "Project export (save anywhere locally) — reopen later or share with others",
         ".TSV export",
         "License for professional use",
       ];
 
+  const introNote = isNo
+    ? "Introduksjonspris for tidlige brukere. Denne prisen beholdes så lenge lisensen er aktiv."
+    : "Introductory price for early users. This price is kept for as long as the license remains active.";
+
   const buyLabel = isNo ? "Kjøp Pro-lisens" : "Buy Pro license";
   const soon = isNo ? "Kommer snart" : "Coming soon";
 
-  // ✅ Ny bunntekst (etter lansering): videreutvikling + lisensstruktur
-  const note = isNo
-    ? "Progress vil videreutvikles fortløpende. Nye funksjoner kan på sikt danne grunnlag for et utvidet lisensutvalg. Pro vil under ingen omstendigheter miste funksjonalitet – det du kjøper i dag forblir tilgjengelig."
-    : "Progress will keep evolving. New features may later support an expanded set of license tiers. Pro will never lose functionality — what you buy today stays available.";
+  const footerNote = isNo
+    ? "Progress videreutvikles fortløpende. Nye funksjoner kan på sikt danne grunnlag for et utvidet lisensutvalg. Pro vil under ingen omstendigheter miste funksjonalitet."
+    : "Progress will continue to evolve. New features may later support an expanded license structure. Pro will never lose functionality.";
 
   const back = isNo ? "← Tilbake til Progress" : "← Back to Progress";
   const openApp = isNo ? "Åpne Progress-appen" : "Open the Progress app";
@@ -162,10 +164,10 @@ const ProgressPricingPage: React.FC = () => {
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>{proTitle}</h3>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontWeight: 700 }}>
-                {isNo ? PRICE_PRO_NO : PRICE_PRO_EN}
+                {isNo ? PRICE_PRO_INTRO_NO : PRICE_PRO_INTRO_EN}
               </div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>
-                {isNo ? "Lisens per bruker" : "Per-user license"}
+                {introNote}
               </div>
             </div>
           </div>
@@ -199,18 +201,12 @@ const ProgressPricingPage: React.FC = () => {
               {buyLabel}
               {disabled ? ` · ${soon}` : ""}
             </a>
-
-            <div style={{ marginTop: "0.6rem", fontSize: 13, opacity: 0.85 }}>
-              {isNo
-                ? "Kjøp åpner checkout og aktiverer Pro på lisensen."
-                : "Purchase opens checkout and activates Pro on the license."}
-            </div>
           </div>
         </div>
 
-        {/* NOTE */}
+        {/* FOOTER NOTE */}
         <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <p style={{ margin: 0, opacity: 0.85 }}>{note}</p>
+          <p style={{ margin: 0, opacity: 0.85 }}>{footerNote}</p>
         </div>
       </section>
     </main>
