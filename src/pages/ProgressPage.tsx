@@ -143,7 +143,6 @@ const ProgressPage: React.FC = () => {
 
           seeTitle: "Want to see how Progress actually works?",
           seeLead: "Progress is best when you see it in action.",
-          ctaShots: "View screenshots",
           ctaMore: "Learn how it works",
           ctaPrices: "Pricing & license",
           ctaApp: "Open the Progress app",
@@ -236,9 +235,6 @@ const ProgressPage: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <Link className="hero-cta" to="/progress/skjermbilder">
-              {copy.ctaShots}
-            </Link>
 
             <Link
               to="/progress/oversikt"
