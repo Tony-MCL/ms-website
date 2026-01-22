@@ -273,7 +273,12 @@ const ProgressOverviewPage: React.FC = () => {
           onClick={() => setOpenIndex(null)}
           style={{
             position: "fixed",
-            inset: 0,
+            // 👇 legg overlay under headeren (header er fixed)
+            top: "var(--header-height)",
+            left: 0,
+            right: 0,
+            bottom: 0,
+      
             background: "rgba(0,0,0,0.75)",
             display: "flex",
             alignItems: "center",
@@ -290,6 +295,11 @@ const ProgressOverviewPage: React.FC = () => {
               overflow: "hidden",
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.10)",
+      
+              // 👇 behold alt innenfor tilgjengelig høyde (etter header)
+              maxHeight: "calc(100vh - var(--header-height) - 2rem)",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <div
@@ -299,12 +309,13 @@ const ProgressOverviewPage: React.FC = () => {
                 alignItems: "center",
                 padding: "0.75rem 1rem",
                 borderBottom: "1px solid rgba(255,255,255,0.10)",
+                flex: "0 0 auto",
               }}
             >
               <strong>
                 {copy.screenshotLabel} {openIndex + 1} / {pairs.length}
               </strong>
-
+      
               <button
                 type="button"
                 onClick={() => setOpenIndex(null)}
@@ -320,8 +331,20 @@ const ProgressOverviewPage: React.FC = () => {
                 {copy.closeLabel}
               </button>
             </div>
-
-            <div style={{ background: "rgba(0,0,0,0.08)" }}>
+      
+            <div
+              style={{
+                background: "rgba(0,0,0,0.08)",
+      
+                // 👇 dette området tar resten av plassen og skroller ved behov
+                flex: "1 1 auto",
+                minHeight: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0.75rem",
+              }}
+            >
               {missing[openIndex] ? (
                 <div
                   style={{
@@ -348,15 +371,24 @@ const ProgressOverviewPage: React.FC = () => {
                 <img
                   src={pairs[openIndex].imgSrc}
                   alt={pairs[openIndex].imgAlt}
-                  style={{ width: "100%", display: "block" }}
                   onError={() =>
                     setMissing((prev) => ({ ...prev, [openIndex]: true }))
                   }
+                  style={{
+                    display: "block",
+      
+                    // 👇 alltid skaler inn i tilgjengelig plass
+                    width: "100%",
+                    height: "100%",
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "contain",
+                  }}
                 />
               )}
             </div>
-
-            <div style={{ padding: "0.9rem 1rem" }}>
+      
+            <div style={{ padding: "0.9rem 1rem", flex: "0 0 auto" }}>
               <p style={{ margin: 0 }}>{pairs[openIndex].imgCaption}</p>
             </div>
           </div>
