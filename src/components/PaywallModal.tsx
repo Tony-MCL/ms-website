@@ -37,7 +37,6 @@ function roundKr(v: number) {
 }
 
 function formatKr(n: number, lang: string) {
-  // Vi runder til hele kroner for visning
   const r = roundKr(n);
   const isNo = lang === "no";
   return isNo ? `${r} kr` : `${r} NOK`;
@@ -100,7 +99,6 @@ const PaywallModal: React.FC<Props> = ({
     setBusy(false);
     setEmailTouched(false);
 
-    // Default “sane” selections for buy
     if (mode === "buy") {
       setBillingPeriod("month");
       setPurchaseType("subscription");
@@ -146,16 +144,16 @@ const PaywallModal: React.FC<Props> = ({
     subscription: isNo ? "Abonnement" : "Subscription",
     oneTime: isNo ? "Engangsbetaling" : "One-time payment",
 
-    priceHeader: isNo ? "Pris" : "Price",
+    priceTitle: isNo ? "Pris" : "Price",
     exVat: isNo ? "Eks. mva" : "Ex. VAT",
     inclVat: isNo ? "Inkl. mva" : "Incl. VAT",
-    vatInfo: isNo
-      ? `Mva: ${Math.round(vatRate * 100)}%`
-      : `VAT: ${Math.round(vatRate * 100)}%`,
+    vatInfo: isNo ? `Mva: ${Math.round(vatRate * 100)}%` : `VAT: ${Math.round(vatRate * 100)}%`,
 
     chosen: isNo ? "Valgt" : "Chosen",
     perMonth: isNo ? "per måned" : "per month",
     perYear: isNo ? "per år" : "per year",
+
+    saves: isNo ? "Du sparer" : "You save",
 
     goToCheckout: isNo ? "Gå til betaling" : "Go to checkout",
 
@@ -168,12 +166,14 @@ const PaywallModal: React.FC<Props> = ({
   const emailOk = isValidEmail(email);
   const showEmailError = emailTouched && !emailOk;
 
-  const selectedExVat =
-    billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
-  const selectedInclVat = selectedExVat * (1 + vatRate);
-
   const monthInclVat = priceMonthExVat * (1 + vatRate);
   const yearInclVat = priceYearExVat * (1 + vatRate);
+
+  const selectedExVat = billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
+  const selectedInclVat = selectedExVat * (1 + vatRate);
+
+  const annualSavingExVat = Math.max(0, 12 * priceMonthExVat - priceYearExVat);
+  const annualSavingInclVat = annualSavingExVat * (1 + vatRate);
 
   async function startTrial() {
     setEmailTouched(true);
@@ -282,6 +282,17 @@ const PaywallModal: React.FC<Props> = ({
   const title = mode === "trial" ? t.trialTitle : t.buyTitle;
   const sub = mode === "trial" ? t.trialBody : t.buyBody;
 
+  const optionRowStyle = (selected: boolean) => ({
+    display: "flex",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    gap: 12,
+    padding: "0.75rem 0.8rem",
+    borderRadius: 12,
+    border: selected ? chipBorder : "1px solid transparent",
+    background: selected ? chipBgActive : inputBg,
+  });
+
   return (
     <div
       role="dialog"
@@ -324,7 +335,7 @@ const PaywallModal: React.FC<Props> = ({
           style={{
             display: "flex",
             gap: 12,
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "space-between",
             padding: "0.9rem 1rem",
             borderBottom: line,
@@ -349,7 +360,6 @@ const PaywallModal: React.FC<Props> = ({
               cursor: "pointer",
               flex: "0 0 auto",
               height: 36,
-              alignSelf: "flex-start",
             }}
           >
             {t.close}
@@ -391,27 +401,25 @@ const PaywallModal: React.FC<Props> = ({
           </div>
 
           {mode === "trial" ? (
-            <>
-              <button
-                type="button"
-                onClick={startTrial}
-                disabled={busy}
-                style={{
-                  padding: "0.8rem 1rem",
-                  borderRadius: 12,
-                  border: chipBorder,
-                  background: chipBgActive,
-                  color: "inherit",
-                  cursor: busy ? "default" : "pointer",
-                  fontWeight: 900,
-                }}
-              >
-                {t.startTrial}
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={startTrial}
+              disabled={busy}
+              style={{
+                padding: "0.8rem 1rem",
+                borderRadius: 12,
+                border: chipBorder,
+                background: chipBgActive,
+                color: "inherit",
+                cursor: busy ? "default" : "pointer",
+                fontWeight: 900,
+              }}
+            >
+              {t.startTrial}
+            </button>
           ) : (
             <>
-              {/* Pricing summary (month vs year) */}
+              {/* Pris – kompakt, tydelig (slik du skisserte) */}
               <div
                 style={{
                   border: chipBorder,
@@ -421,95 +429,70 @@ const PaywallModal: React.FC<Props> = ({
                   marginBottom: "1rem",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                  <strong>{t.priceHeader}</strong>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+                  <strong>{t.priceTitle}</strong>
                   <span style={{ fontSize: 13, opacity: 0.8, color: "var(--mcl-text-dim)" }}>
                     {t.vatInfo}
                   </span>
                 </div>
 
                 <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-                  {/* Month row */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      gap: 10,
-                      alignItems: "center",
-                      padding: "0.65rem 0.7rem",
-                      borderRadius: 10,
-                      border: billingPeriod === "month" ? chipBorder : "1px solid transparent",
-                      background: billingPeriod === "month" ? chipBgActive : "transparent",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 800 }}>
-                        {t.month} ({formatKr(priceMonthExVat, lang)} {t.exVat})
-                      </div>
-                      <div style={{ fontSize: 13, opacity: 0.85, color: "var(--mcl-text-dim)" }}>
-                        {formatKr(monthInclVat, lang)} {t.inclVat} • {t.perMonth}
+                  <label style={optionRowStyle(billingPeriod === "month")}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <input
+                        type="radio"
+                        name="billingPeriod"
+                        checked={billingPeriod === "month"}
+                        onChange={() => setBillingPeriod("month")}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 900 }}>
+                          {t.month}: {formatKr(priceMonthExVat, lang)} {t.exVat}
+                        </div>
+                        <div style={{ fontSize: 13, opacity: 0.85, color: "var(--mcl-text-dim)" }}>
+                          {formatKr(monthInclVat, lang)} {t.inclVat} • {t.perMonth}
+                        </div>
                       </div>
                     </div>
-                    <div style={{ fontSize: 13, opacity: billingPeriod === "month" ? 1 : 0.75 }}>
-                      {billingPeriod === "month" ? `✓ ${t.chosen}` : ""}
-                    </div>
-                  </div>
 
-                  {/* Year row */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      gap: 10,
-                      alignItems: "center",
-                      padding: "0.65rem 0.7rem",
-                      borderRadius: 10,
-                      border: billingPeriod === "year" ? chipBorder : "1px solid transparent",
-                      background: billingPeriod === "year" ? chipBgActive : "transparent",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 800 }}>
-                        {t.year} ({formatKr(priceYearExVat, lang)} {t.exVat})
-                      </div>
-                      <div style={{ fontSize: 13, opacity: 0.85, color: "var(--mcl-text-dim)" }}>
-                        {formatKr(yearInclVat, lang)} {t.inclVat} • {t.perYear}
+                    <div style={{ fontSize: 13, fontWeight: 800, opacity: billingPeriod === "month" ? 1 : 0.0 }}>
+                      {t.chosen}
+                    </div>
+                  </label>
+
+                  <label style={optionRowStyle(billingPeriod === "year")}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <input
+                        type="radio"
+                        name="billingPeriod"
+                        checked={billingPeriod === "year"}
+                        onChange={() => setBillingPeriod("year")}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 900 }}>
+                          {t.year}: {formatKr(priceYearExVat, lang)} {t.exVat}
+                        </div>
+                        <div style={{ fontSize: 13, opacity: 0.85, color: "var(--mcl-text-dim)" }}>
+                          {formatKr(yearInclVat, lang)} {t.inclVat} • {t.perYear}
+                        </div>
+                        {annualSavingExVat > 0 ? (
+                          <div style={{ fontSize: 12, opacity: 0.85, color: "var(--mcl-text-dim)", marginTop: 2 }}>
+                            {t.saves} {formatKr(annualSavingExVat, lang)} {t.exVat} /{" "}
+                            {formatKr(annualSavingInclVat, lang)} {t.inclVat}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
-                    <div style={{ fontSize: 13, opacity: billingPeriod === "year" ? 1 : 0.75 }}>
-                      {billingPeriod === "year" ? `✓ ${t.chosen}` : ""}
+
+                    <div style={{ fontSize: 13, fontWeight: 800, opacity: billingPeriod === "year" ? 1 : 0.0 }}>
+                      {t.chosen}
                     </div>
-                  </div>
+                  </label>
                 </div>
               </div>
 
-              {/* Billing period */}
+              {/* Kjøpstype */}
               <div style={{ marginTop: "0.2rem" }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.periodLabel}</div>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="radio"
-                      name="billingPeriod"
-                      checked={billingPeriod === "month"}
-                      onChange={() => setBillingPeriod("month")}
-                    />
-                    {t.month}
-                  </label>
-                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="radio"
-                      name="billingPeriod"
-                      checked={billingPeriod === "year"}
-                      onChange={() => setBillingPeriod("year")}
-                    />
-                    {t.year}
-                  </label>
-                </div>
-              </div>
-
-              {/* Purchase type */}
-              <div style={{ marginTop: "0.9rem" }}>
                 <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.typeLabel}</div>
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -533,8 +516,8 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Selected total line */}
-              <div style={{ marginTop: "0.9rem", opacity: 0.9, color: "var(--mcl-text-dim)" }}>
+              {/* Tydelig “regnestykke” som én linje */}
+              <div style={{ marginTop: "0.9rem", opacity: 0.92, color: "var(--mcl-text-dim)" }}>
                 <strong style={{ color: "var(--mcl-text)" }}>
                   {formatKr(selectedExVat, lang)} {t.exVat}
                 </strong>{" "}
