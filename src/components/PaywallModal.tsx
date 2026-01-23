@@ -8,9 +8,16 @@ type Props = {
   open: boolean;
   mode: Mode;
   onClose: () => void;
+
   lang: string; // "no" | "en"
   workerBaseUrl: string;
-  introPriceLabel: string;
+
+  // Pricing (ex VAT) shown in modal
+  priceMonthExVat: number; // e.g. 129
+  priceYearExVat: number; // e.g. 1290
+  vatRate: number; // e.g. 0.25
+
+  currency: string; // "NOK"
 };
 
 function clampUrlBase(u: string) {
@@ -25,13 +32,27 @@ function getIsDarkTheme() {
   return document.documentElement.getAttribute("data-theme") === "dark";
 }
 
+function roundKr(v: number) {
+  return Math.round(v);
+}
+
+function formatKr(n: number, lang: string) {
+  // Vi runder til hele kroner for visning
+  const r = roundKr(n);
+  const isNo = lang === "no";
+  return isNo ? `${r} kr` : `${r} NOK`;
+}
+
 const PaywallModal: React.FC<Props> = ({
   open,
   mode,
   onClose,
   lang,
   workerBaseUrl,
-  introPriceLabel,
+  priceMonthExVat,
+  priceYearExVat,
+  vatRate,
+  currency,
 }) => {
   const isNo = lang === "no";
 
@@ -44,8 +65,6 @@ const PaywallModal: React.FC<Props> = ({
 
   const base = useMemo(() => clampUrlBase(workerBaseUrl), [workerBaseUrl]);
 
-  const [tab, setTab] = useState<Mode>(mode);
-
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
 
@@ -56,7 +75,7 @@ const PaywallModal: React.FC<Props> = ({
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Theme awareness while open (handles toggling Lys/Mørk with modal open)
+  // Theme awareness while open
   const [isDark, setIsDark] = useState(() => getIsDarkTheme());
   useEffect(() => {
     if (!open) return;
@@ -72,14 +91,19 @@ const PaywallModal: React.FC<Props> = ({
     return () => obs.disconnect();
   }, [open]);
 
-  // Sync mode -> tab when opened / changed
+  // Reset per open/mode
   useEffect(() => {
-    if (open) {
-      setTab(mode);
-      setStatus(null);
-      setError(null);
-      setBusy(false);
-      setEmailTouched(false);
+    if (!open) return;
+
+    setStatus(null);
+    setError(null);
+    setBusy(false);
+    setEmailTouched(false);
+
+    // Default “sane” selections for buy
+    if (mode === "buy") {
+      setBillingPeriod("month");
+      setPurchaseType("subscription");
     }
   }, [open, mode]);
 
@@ -96,11 +120,7 @@ const PaywallModal: React.FC<Props> = ({
   if (!open) return null;
 
   const t = {
-    title: isNo ? "Lisens og trial" : "License & trial",
     close: isNo ? "Lukk" : "Close",
-
-    tabTrial: isNo ? "Start trial" : "Start trial",
-    tabBuy: isNo ? "Kjøp Pro" : "Buy Pro",
 
     emailLabel: isNo ? "E-postadresse" : "Email address",
     emailHelp: isNo
@@ -117,7 +137,6 @@ const PaywallModal: React.FC<Props> = ({
     buyBody: isNo
       ? "Velg betalingsperiode og kjøpstype. Du blir sendt til checkout."
       : "Choose billing period and purchase type. You’ll be redirected to checkout.",
-    priceLabel: isNo ? "Pris" : "Price",
 
     periodLabel: isNo ? "Betalingsperiode" : "Billing period",
     month: isNo ? "Månedlig" : "Monthly",
@@ -126,6 +145,17 @@ const PaywallModal: React.FC<Props> = ({
     typeLabel: isNo ? "Kjøpstype" : "Purchase type",
     subscription: isNo ? "Abonnement" : "Subscription",
     oneTime: isNo ? "Engangsbetaling" : "One-time payment",
+
+    priceHeader: isNo ? "Pris" : "Price",
+    exVat: isNo ? "Eks. mva" : "Ex. VAT",
+    inclVat: isNo ? "Inkl. mva" : "Incl. VAT",
+    vatInfo: isNo
+      ? `Mva: ${Math.round(vatRate * 100)}%`
+      : `VAT: ${Math.round(vatRate * 100)}%`,
+
+    chosen: isNo ? "Valgt" : "Chosen",
+    perMonth: isNo ? "per måned" : "per month",
+    perYear: isNo ? "per år" : "per year",
 
     goToCheckout: isNo ? "Gå til betaling" : "Go to checkout",
 
@@ -137,6 +167,13 @@ const PaywallModal: React.FC<Props> = ({
 
   const emailOk = isValidEmail(email);
   const showEmailError = emailTouched && !emailOk;
+
+  const selectedExVat =
+    billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
+  const selectedInclVat = selectedExVat * (1 + vatRate);
+
+  const monthInclVat = priceMonthExVat * (1 + vatRate);
+  const yearInclVat = priceYearExVat * (1 + vatRate);
 
   async function startTrial() {
     setEmailTouched(true);
@@ -222,27 +259,34 @@ const PaywallModal: React.FC<Props> = ({
     }
   }
 
-  // Theme-driven styling (works with :root + html[data-theme="dark"])
+  // Theme-driven styling
   const overlayBg = isDark ? "rgba(0,0,0,0.86)" : "rgba(0,0,0,0.45)";
   const overlayBlur = isDark ? "blur(10px)" : "blur(6px)";
 
   const panelBg = "var(--mcl-surface)";
   const panelBorder = "1px solid var(--mcl-border)";
-  const panelShadow = isDark ? "0 18px 60px rgba(0,0,0,0.55)" : "0 18px 60px rgba(0,0,0,0.20)";
+  const panelShadow = isDark
+    ? "0 18px 60px rgba(0,0,0,0.55)"
+    : "0 18px 60px rgba(0,0,0,0.20)";
 
-  const subtleLine = "1px solid rgba(0,0,0,0.10)";
-  const subtleLineDark = "1px solid rgba(255,255,255,0.12)";
-  const line = isDark ? subtleLineDark : subtleLine;
+  const line = isDark
+    ? "1px solid rgba(255,255,255,0.12)"
+    : "1px solid rgba(0,0,0,0.10)";
 
   const inputBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
   const chipBgActive = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)";
-  const chipBorder = isDark ? "1px solid rgba(255,255,255,0.20)" : "1px solid rgba(0,0,0,0.16)";
+  const chipBorder = isDark
+    ? "1px solid rgba(255,255,255,0.20)"
+    : "1px solid rgba(0,0,0,0.16)";
+
+  const title = mode === "trial" ? t.trialTitle : t.buyTitle;
+  const sub = mode === "trial" ? t.trialBody : t.buyBody;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={t.title}
+      aria-label={title}
       onClick={onClose}
       style={{
         position: "fixed",
@@ -263,7 +307,7 @@ const PaywallModal: React.FC<Props> = ({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(720px, 100%)",
+          width: "min(760px, 100%)",
           maxHeight: "calc(100vh - var(--header-height) - 2rem)",
           display: "flex",
           flexDirection: "column",
@@ -275,18 +319,24 @@ const PaywallModal: React.FC<Props> = ({
           color: "var(--mcl-text)",
         }}
       >
-        {/* Header */}
+        {/* Top bar: Title + close */}
         <div
           style={{
             display: "flex",
             gap: 12,
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0.85rem 1rem",
+            padding: "0.9rem 1rem",
             borderBottom: line,
           }}
         >
-          <strong>{t.title}</strong>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <strong style={{ fontSize: 16 }}>{title}</strong>
+            <div style={{ fontSize: 13, opacity: 0.8, color: "var(--mcl-text-dim)" }}>
+              {sub}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
@@ -297,56 +347,13 @@ const PaywallModal: React.FC<Props> = ({
               background: inputBg,
               color: "inherit",
               cursor: "pointer",
+              flex: "0 0 auto",
+              height: 36,
+              alignSelf: "flex-start",
             }}
           >
             {t.close}
           </button>
-        </div>
-
-        {/* Tabs */}
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            padding: "0.75rem 1rem",
-            borderBottom: line,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setTab("trial")}
-            style={{
-              padding: "0.55rem 0.8rem",
-              borderRadius: 12,
-              border: chipBorder,
-              background: tab === "trial" ? chipBgActive : "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              fontWeight: 800,
-            }}
-          >
-            {t.tabTrial}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("buy")}
-            style={{
-              padding: "0.55rem 0.8rem",
-              borderRadius: 12,
-              border: chipBorder,
-              background: tab === "buy" ? chipBgActive : "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              fontWeight: 800,
-            }}
-          >
-            {t.tabBuy}
-          </button>
-
-          <div style={{ marginLeft: "auto", opacity: 0.85, fontSize: 13 }}>
-            {t.priceLabel}: <strong>{introPriceLabel}</strong>
-          </div>
         </div>
 
         {/* Body */}
@@ -383,17 +390,14 @@ const PaywallModal: React.FC<Props> = ({
             )}
           </div>
 
-          {tab === "trial" ? (
+          {mode === "trial" ? (
             <>
-              <h3 style={{ marginTop: 0 }}>{t.trialTitle}</h3>
-              <p style={{ opacity: 0.92 }}>{t.trialBody}</p>
-
               <button
                 type="button"
                 onClick={startTrial}
                 disabled={busy}
                 style={{
-                  padding: "0.75rem 1rem",
+                  padding: "0.8rem 1rem",
                   borderRadius: 12,
                   border: chipBorder,
                   background: chipBgActive,
@@ -407,11 +411,80 @@ const PaywallModal: React.FC<Props> = ({
             </>
           ) : (
             <>
-              <h3 style={{ marginTop: 0 }}>{t.buyTitle}</h3>
-              <p style={{ opacity: 0.92 }}>{t.buyBody}</p>
+              {/* Pricing summary (month vs year) */}
+              <div
+                style={{
+                  border: chipBorder,
+                  background: inputBg,
+                  borderRadius: 12,
+                  padding: "0.9rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                  <strong>{t.priceHeader}</strong>
+                  <span style={{ fontSize: 13, opacity: 0.8, color: "var(--mcl-text-dim)" }}>
+                    {t.vatInfo}
+                  </span>
+                </div>
+
+                <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+                  {/* Month row */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: 10,
+                      alignItems: "center",
+                      padding: "0.65rem 0.7rem",
+                      borderRadius: 10,
+                      border: billingPeriod === "month" ? chipBorder : "1px solid transparent",
+                      background: billingPeriod === "month" ? chipBgActive : "transparent",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 800 }}>
+                        {t.month} ({formatKr(priceMonthExVat, lang)} {t.exVat})
+                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.85, color: "var(--mcl-text-dim)" }}>
+                        {formatKr(monthInclVat, lang)} {t.inclVat} • {t.perMonth}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, opacity: billingPeriod === "month" ? 1 : 0.75 }}>
+                      {billingPeriod === "month" ? `✓ ${t.chosen}` : ""}
+                    </div>
+                  </div>
+
+                  {/* Year row */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: 10,
+                      alignItems: "center",
+                      padding: "0.65rem 0.7rem",
+                      borderRadius: 10,
+                      border: billingPeriod === "year" ? chipBorder : "1px solid transparent",
+                      background: billingPeriod === "year" ? chipBgActive : "transparent",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 800 }}>
+                        {t.year} ({formatKr(priceYearExVat, lang)} {t.exVat})
+                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.85, color: "var(--mcl-text-dim)" }}>
+                        {formatKr(yearInclVat, lang)} {t.inclVat} • {t.perYear}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, opacity: billingPeriod === "year" ? 1 : 0.75 }}>
+                      {billingPeriod === "year" ? `✓ ${t.chosen}` : ""}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Billing period */}
-              <div style={{ marginTop: "0.9rem" }}>
+              <div style={{ marginTop: "0.2rem" }}>
                 <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.periodLabel}</div>
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -460,13 +533,25 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
               </div>
 
+              {/* Selected total line */}
+              <div style={{ marginTop: "0.9rem", opacity: 0.9, color: "var(--mcl-text-dim)" }}>
+                <strong style={{ color: "var(--mcl-text)" }}>
+                  {formatKr(selectedExVat, lang)} {t.exVat}
+                </strong>{" "}
+                /{" "}
+                <strong style={{ color: "var(--mcl-text)" }}>
+                  {formatKr(selectedInclVat, lang)} {t.inclVat}
+                </strong>{" "}
+                • {billingPeriod === "month" ? t.perMonth : t.perYear} ({currency})
+              </div>
+
               <div style={{ marginTop: "1.1rem" }}>
                 <button
                   type="button"
                   onClick={goToCheckout}
                   disabled={busy}
                   style={{
-                    padding: "0.75rem 1rem",
+                    padding: "0.8rem 1rem",
                     borderRadius: 12,
                     border: chipBorder,
                     background: chipBgActive,
