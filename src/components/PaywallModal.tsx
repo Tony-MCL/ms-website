@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 type Mode = "trial" | "buy";
-
 type BillingPeriod = "month" | "year";
 type PurchaseType = "subscription" | "one_time";
 
@@ -9,15 +8,8 @@ type Props = {
   open: boolean;
   mode: Mode;
   onClose: () => void;
-
-  // "no" | "en"
-  lang: string;
-
-  // Worker base URL, f.eks:
-  // https://gentle-wildflower-980e.morningcoffeelabs.workers.dev
+  lang: string; // "no" | "en"
   workerBaseUrl: string;
-
-  // Intro-pris tekst til visning i modalen (ikke brukt til Stripe-logikk)
   introPriceLabel: string;
 };
 
@@ -27,6 +19,10 @@ function clampUrlBase(u: string) {
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+function getIsDarkTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark";
 }
 
 const PaywallModal: React.FC<Props> = ({
@@ -59,6 +55,22 @@ const PaywallModal: React.FC<Props> = ({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Theme awareness while open (handles toggling Lys/Mørk with modal open)
+  const [isDark, setIsDark] = useState(() => getIsDarkTheme());
+  useEffect(() => {
+    if (!open) return;
+
+    setIsDark(getIsDarkTheme());
+
+    const el = document.documentElement;
+    const obs = new MutationObserver(() => {
+      setIsDark(getIsDarkTheme());
+    });
+    obs.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => obs.disconnect();
+  }, [open]);
 
   // Sync mode -> tab when opened / changed
   useEffect(() => {
@@ -130,7 +142,6 @@ const PaywallModal: React.FC<Props> = ({
     setEmailTouched(true);
     setStatus(null);
     setError(null);
-
     if (!emailOk) return;
 
     setBusy(true);
@@ -138,10 +149,7 @@ const PaywallModal: React.FC<Props> = ({
       const res = await fetch(`${base}${ROUTE_TRIAL_START}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          lang,
-        }),
+        body: JSON.stringify({ email: email.trim(), lang }),
       });
 
       if (!res.ok) {
@@ -158,7 +166,6 @@ const PaywallModal: React.FC<Props> = ({
       } catch {
         // ignore
       }
-
       setStatus(msg);
     } catch (e: any) {
       setError(e?.message || t.networkError);
@@ -171,7 +178,6 @@ const PaywallModal: React.FC<Props> = ({
     setEmailTouched(true);
     setStatus(null);
     setError(null);
-
     if (!emailOk) return;
 
     setBusy(true);
@@ -185,8 +191,8 @@ const PaywallModal: React.FC<Props> = ({
         body: JSON.stringify({
           email: email.trim(),
           lang,
-          billingPeriod, // "month" | "year"
-          purchaseType, // "subscription" | "one_time"
+          billingPeriod,
+          purchaseType,
           successUrl,
           cancelUrl,
         }),
@@ -216,6 +222,22 @@ const PaywallModal: React.FC<Props> = ({
     }
   }
 
+  // Theme-driven styling (works with :root + html[data-theme="dark"])
+  const overlayBg = isDark ? "rgba(0,0,0,0.86)" : "rgba(0,0,0,0.45)";
+  const overlayBlur = isDark ? "blur(10px)" : "blur(6px)";
+
+  const panelBg = "var(--mcl-surface)";
+  const panelBorder = "1px solid var(--mcl-border)";
+  const panelShadow = isDark ? "0 18px 60px rgba(0,0,0,0.55)" : "0 18px 60px rgba(0,0,0,0.20)";
+
+  const subtleLine = "1px solid rgba(0,0,0,0.10)";
+  const subtleLineDark = "1px solid rgba(255,255,255,0.12)";
+  const line = isDark ? subtleLineDark : subtleLine;
+
+  const inputBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
+  const chipBgActive = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)";
+  const chipBorder = isDark ? "1px solid rgba(255,255,255,0.20)" : "1px solid rgba(0,0,0,0.16)";
+
   return (
     <div
       role="dialog"
@@ -228,12 +250,9 @@ const PaywallModal: React.FC<Props> = ({
         left: 0,
         right: 0,
         bottom: 0,
-
-        // ✅ Kutt støy: mørkere + blur
-        background: "rgba(0,0,0,0.86)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-
+        background: overlayBg,
+        backdropFilter: overlayBlur,
+        WebkitBackdropFilter: overlayBlur,
         zIndex: 9999,
         display: "flex",
         justifyContent: "center",
@@ -250,11 +269,10 @@ const PaywallModal: React.FC<Props> = ({
           flexDirection: "column",
           borderRadius: 16,
           overflow: "hidden",
-
-          // ✅ Tett boks: ingen gjennomsikt
-          background: "rgba(16,16,16,0.98)",
-          border: "1px solid rgba(255,255,255,0.14)",
-          boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
+          background: panelBg,
+          border: panelBorder,
+          boxShadow: panelShadow,
+          color: "var(--mcl-text)",
         }}
       >
         {/* Header */}
@@ -265,7 +283,7 @@ const PaywallModal: React.FC<Props> = ({
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0.85rem 1rem",
-            borderBottom: "1px solid rgba(255,255,255,0.12)",
+            borderBottom: line,
           }}
         >
           <strong>{t.title}</strong>
@@ -275,8 +293,8 @@ const PaywallModal: React.FC<Props> = ({
             style={{
               padding: "0.45rem 0.7rem",
               borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.22)",
-              background: "rgba(255,255,255,0.06)",
+              border: chipBorder,
+              background: inputBg,
               color: "inherit",
               cursor: "pointer",
             }}
@@ -291,7 +309,7 @@ const PaywallModal: React.FC<Props> = ({
             display: "flex",
             gap: 8,
             padding: "0.75rem 1rem",
-            borderBottom: "1px solid rgba(255,255,255,0.12)",
+            borderBottom: line,
           }}
         >
           <button
@@ -300,8 +318,8 @@ const PaywallModal: React.FC<Props> = ({
             style={{
               padding: "0.55rem 0.8rem",
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.20)",
-              background: tab === "trial" ? "rgba(255,255,255,0.10)" : "transparent",
+              border: chipBorder,
+              background: tab === "trial" ? chipBgActive : "transparent",
               color: "inherit",
               cursor: "pointer",
               fontWeight: 800,
@@ -316,8 +334,8 @@ const PaywallModal: React.FC<Props> = ({
             style={{
               padding: "0.55rem 0.8rem",
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.20)",
-              background: tab === "buy" ? "rgba(255,255,255,0.10)" : "transparent",
+              border: chipBorder,
+              background: tab === "buy" ? chipBgActive : "transparent",
               color: "inherit",
               cursor: "pointer",
               fontWeight: 800,
@@ -326,7 +344,7 @@ const PaywallModal: React.FC<Props> = ({
             {t.tabBuy}
           </button>
 
-          <div style={{ marginLeft: "auto", opacity: 0.9, fontSize: 13 }}>
+          <div style={{ marginLeft: "auto", opacity: 0.85, fontSize: 13 }}>
             {t.priceLabel}: <strong>{introPriceLabel}</strong>
           </div>
         </div>
@@ -349,13 +367,13 @@ const PaywallModal: React.FC<Props> = ({
                 borderRadius: 12,
                 border: showEmailError
                   ? "1px solid rgba(255,80,80,0.75)"
-                  : "1px solid rgba(255,255,255,0.22)",
-                background: "rgba(255,255,255,0.06)",
+                  : chipBorder,
+                background: inputBg,
                 color: "inherit",
                 outline: "none",
               }}
             />
-            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>
+            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, color: "var(--mcl-text-dim)" }}>
               {t.emailHelp}
             </div>
             {showEmailError && (
@@ -377,8 +395,8 @@ const PaywallModal: React.FC<Props> = ({
                 style={{
                   padding: "0.75rem 1rem",
                   borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.22)",
-                  background: "rgba(255,255,255,0.10)",
+                  border: chipBorder,
+                  background: chipBgActive,
                   color: "inherit",
                   cursor: busy ? "default" : "pointer",
                   fontWeight: 900,
@@ -394,9 +412,7 @@ const PaywallModal: React.FC<Props> = ({
 
               {/* Billing period */}
               <div style={{ marginTop: "0.9rem" }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>
-                  {t.periodLabel}
-                </div>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.periodLabel}</div>
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
@@ -421,9 +437,7 @@ const PaywallModal: React.FC<Props> = ({
 
               {/* Purchase type */}
               <div style={{ marginTop: "0.9rem" }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>
-                  {t.typeLabel}
-                </div>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.typeLabel}</div>
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
@@ -454,8 +468,8 @@ const PaywallModal: React.FC<Props> = ({
                   style={{
                     padding: "0.75rem 1rem",
                     borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.22)",
-                    background: "rgba(255,255,255,0.10)",
+                    border: chipBorder,
+                    background: chipBgActive,
                     color: "inherit",
                     cursor: busy ? "default" : "pointer",
                     fontWeight: 900,
@@ -467,15 +481,14 @@ const PaywallModal: React.FC<Props> = ({
             </>
           )}
 
-          {/* Status / error */}
           {(status || error) && (
             <div
               style={{
                 marginTop: "1rem",
                 padding: "0.75rem 0.9rem",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.18)",
-                background: "rgba(255,255,255,0.06)",
+                border: chipBorder,
+                background: inputBg,
                 opacity: 0.98,
               }}
             >
