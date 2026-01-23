@@ -501,9 +501,10 @@ const PaywallModal: React.FC<Props> = ({
                     </div>
 
                     <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
-                     {formatKr(selectedInclVat, lang)}
-                     {purchaseType === "subscription" &&
-                       (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
+                    <div style={{ textAlign: "right", fontWeight: 900 }}>
+                      {formatKr(selectedInclVat, lang)}
+                      {purchaseType === "subscription" &&
+                        (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
                     </div>
                   </div>
 
