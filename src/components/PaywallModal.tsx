@@ -174,11 +174,11 @@ const PaywallModal: React.FC<Props> = ({
   // - Month + one-time: no suffix
   // - Year + one-time: /år (per your example)
   const totalSuffix =
-    billingPeriod === "year"
+  purchaseType === "one_time"
+    ? ""
+    : billingPeriod === "year"
       ? ` ${t.perYear}`
-      : purchaseType === "subscription"
-        ? ` ${t.perMonth}`
-        : "";
+      : ` ${t.perMonth}`;
 
   async function startTrial() {
     setEmailTouched(true);
@@ -501,9 +501,9 @@ const PaywallModal: React.FC<Props> = ({
                     </div>
 
                     <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 900 }}>
-                      {formatKr(selectedInclVat, lang)}
-                      {totalSuffix}
+                     {formatKr(selectedInclVat, lang)}
+                     {purchaseType === "subscription" &&
+                       (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
                     </div>
                   </div>
 
