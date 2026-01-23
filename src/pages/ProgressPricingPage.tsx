@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
+import PaywallModal from "../components/PaywallModal";
 
 // Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
 const MCL_ORIGIN = "https://morningcoffeelabs.no";
@@ -9,17 +10,27 @@ function mclHref(path: string) {
   return `${MCL_ORIGIN}/#${p}`;
 }
 
-// TODO: Sett inn faktisk checkout-lenke når den er klar
-const CHECKOUT_URL = "#";
+// Worker base (kan overstyres via env)
+const DEFAULT_WORKER_BASE =
+  "https://gentle-wildflower-980e.morningcoffeelabs.workers.dev";
+const WORKER_BASE_URL =
+  (import.meta as any).env?.VITE_PROGRESS_WORKER_BASE_URL || DEFAULT_WORKER_BASE;
 
-// Priser
+// Pris (intro)
 const PRICE_PRO_INTRO_NO = "129 NOK / bruker / måned (eks. mva)";
 const PRICE_PRO_INTRO_EN = "129 NOK / user / month (ex. VAT)";
 
 const ProgressPricingPage: React.FC = () => {
   const { lang } = useI18n();
   const isNo = lang === "no";
-  const disabled = CHECKOUT_URL === "#";
+
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallMode, setPaywallMode] = useState<"trial" | "buy">("buy");
+
+  const introPriceLabel = useMemo(
+    () => (isNo ? PRICE_PRO_INTRO_NO : PRICE_PRO_INTRO_EN),
+    [isNo]
+  );
 
   const title = isNo ? "Priser og lisens" : "Pricing & license";
   const lead = isNo
@@ -78,9 +89,6 @@ const ProgressPricingPage: React.FC = () => {
     ? "Introduksjonspris for tidlige brukere. Denne prisen beholdes så lenge lisensen er aktiv."
     : "Introductory price for early users. This price is kept for as long as the license remains active.";
 
-  const buyLabel = isNo ? "Kjøp Pro-lisens" : "Buy Pro license";
-  const soon = isNo ? "Kommer snart" : "Coming soon";
-
   const footerNote = isNo
     ? "Progress videreutvikles fortløpende. Nye funksjoner kan på sikt danne grunnlag for et utvidet lisensutvalg. Pro vil under ingen omstendigheter miste funksjonalitet."
     : "Progress will continue to evolve. New features may later support an expanded license structure. Pro will never lose functionality.";
@@ -88,6 +96,18 @@ const ProgressPricingPage: React.FC = () => {
   const back = isNo ? "← Tilbake til Progress" : "← Back to Progress";
   const openApp = isNo ? "Åpne Progress-appen" : "Open the Progress app";
   const contact = isNo ? "Kontakt oss →" : "Contact us →";
+
+  const buyLabel = isNo ? "Kjøp Pro-lisens" : "Buy Pro license";
+  const startTrialLabel = isNo ? "Start trial →" : "Start trial →";
+
+  function openTrial() {
+    setPaywallMode("trial");
+    setPaywallOpen(true);
+  }
+  function openBuy() {
+    setPaywallMode("buy");
+    setPaywallOpen(true);
+  }
 
   return (
     <main className="page">
@@ -155,6 +175,24 @@ const ProgressPricingPage: React.FC = () => {
               {trialTitle}
             </strong>
             <p style={{ margin: 0, opacity: 0.92 }}>{trialBody}</p>
+
+            <div style={{ marginTop: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={openTrial}
+                style={{
+                  padding: "0.6rem 0.9rem",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "transparent",
+                  color: "inherit",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                }}
+              >
+                {startTrialLabel}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -163,12 +201,8 @@ const ProgressPricingPage: React.FC = () => {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>{proTitle}</h3>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontWeight: 700 }}>
-                {isNo ? PRICE_PRO_INTRO_NO : PRICE_PRO_INTRO_EN}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>
-                {introNote}
-              </div>
+              <div style={{ fontWeight: 700 }}>{introPriceLabel}</div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>{introNote}</div>
             </div>
           </div>
 
@@ -187,20 +221,19 @@ const ProgressPricingPage: React.FC = () => {
           </ul>
 
           <div style={{ marginTop: "1rem" }}>
-            <a
+            <button
+              type="button"
+              onClick={openBuy}
               className="hero-cta"
-              href={CHECKOUT_URL}
               style={{
-                opacity: disabled ? 0.6 : 1,
-                pointerEvents: disabled ? "none" : "auto",
-                display: "inline-block",
+                // hero-cta er en <Link>-stil i temaet ditt,
+                // så her tvinger vi litt “lenke-look” på en button:
+                border: "none",
+                cursor: "pointer",
               }}
-              aria-disabled={disabled ? "true" : undefined}
-              title={disabled ? soon : undefined}
             >
               {buyLabel}
-              {disabled ? ` · ${soon}` : ""}
-            </a>
+            </button>
           </div>
         </div>
 
@@ -209,6 +242,15 @@ const ProgressPricingPage: React.FC = () => {
           <p style={{ margin: 0, opacity: 0.85 }}>{footerNote}</p>
         </div>
       </section>
+
+      <PaywallModal
+        open={paywallOpen}
+        mode={paywallMode}
+        onClose={() => setPaywallOpen(false)}
+        lang={lang}
+        workerBaseUrl={WORKER_BASE_URL}
+        introPriceLabel={introPriceLabel}
+      />
     </main>
   );
 };
