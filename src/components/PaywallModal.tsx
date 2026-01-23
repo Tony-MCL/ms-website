@@ -68,9 +68,6 @@ const PaywallModal: React.FC<Props> = ({
       setError(null);
       setBusy(false);
       setEmailTouched(false);
-      // behold e-post hvis bruker har skrevet (ofte praktisk),
-      // men du kan nullstille her hvis du heller vil:
-      // setEmail("");
     }
   }, [open, mode]);
 
@@ -152,7 +149,6 @@ const PaywallModal: React.FC<Props> = ({
         throw new Error(txt || `HTTP ${res.status}`);
       }
 
-      // prøv json først (men ikke krev det)
       let msg = isNo
         ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
         : "Trial started. You can now use Pro features for 10 days.";
@@ -189,10 +185,8 @@ const PaywallModal: React.FC<Props> = ({
         body: JSON.stringify({
           email: email.trim(),
           lang,
-
           billingPeriod, // "month" | "year"
           purchaseType, // "subscription" | "one_time"
-
           successUrl,
           cancelUrl,
         }),
@@ -234,7 +228,12 @@ const PaywallModal: React.FC<Props> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.75)",
+
+        // ✅ Kutt støy: mørkere + blur
+        background: "rgba(0,0,0,0.86)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+
         zIndex: 9999,
         display: "flex",
         justifyContent: "center",
@@ -251,8 +250,11 @@ const PaywallModal: React.FC<Props> = ({
           flexDirection: "column",
           borderRadius: 16,
           overflow: "hidden",
-          background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.10)",
+
+          // ✅ Tett boks: ingen gjennomsikt
+          background: "rgba(16,16,16,0.98)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
         }}
       >
         {/* Header */}
@@ -262,8 +264,8 @@ const PaywallModal: React.FC<Props> = ({
             gap: 12,
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0.8rem 1rem",
-            borderBottom: "1px solid rgba(255,255,255,0.10)",
+            padding: "0.85rem 1rem",
+            borderBottom: "1px solid rgba(255,255,255,0.12)",
           }}
         >
           <strong>{t.title}</strong>
@@ -273,8 +275,8 @@ const PaywallModal: React.FC<Props> = ({
             style={{
               padding: "0.45rem 0.7rem",
               borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.18)",
-              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.22)",
+              background: "rgba(255,255,255,0.06)",
               color: "inherit",
               cursor: "pointer",
             }}
@@ -289,20 +291,20 @@ const PaywallModal: React.FC<Props> = ({
             display: "flex",
             gap: 8,
             padding: "0.75rem 1rem",
-            borderBottom: "1px solid rgba(255,255,255,0.10)",
+            borderBottom: "1px solid rgba(255,255,255,0.12)",
           }}
         >
           <button
             type="button"
             onClick={() => setTab("trial")}
             style={{
-              padding: "0.5rem 0.75rem",
+              padding: "0.55rem 0.8rem",
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.14)",
+              border: "1px solid rgba(255,255,255,0.20)",
               background: tab === "trial" ? "rgba(255,255,255,0.10)" : "transparent",
               color: "inherit",
               cursor: "pointer",
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
             {t.tabTrial}
@@ -312,19 +314,19 @@ const PaywallModal: React.FC<Props> = ({
             type="button"
             onClick={() => setTab("buy")}
             style={{
-              padding: "0.5rem 0.75rem",
+              padding: "0.55rem 0.8rem",
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.14)",
+              border: "1px solid rgba(255,255,255,0.20)",
               background: tab === "buy" ? "rgba(255,255,255,0.10)" : "transparent",
               color: "inherit",
               cursor: "pointer",
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
             {t.tabBuy}
           </button>
 
-          <div style={{ marginLeft: "auto", opacity: 0.85, fontSize: 13 }}>
+          <div style={{ marginLeft: "auto", opacity: 0.9, fontSize: 13 }}>
             {t.priceLabel}: <strong>{introPriceLabel}</strong>
           </div>
         </div>
@@ -333,7 +335,7 @@ const PaywallModal: React.FC<Props> = ({
         <div style={{ padding: "1rem", overflow: "auto" }}>
           {/* Email */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
               {t.emailLabel}
             </label>
             <input
@@ -343,17 +345,17 @@ const PaywallModal: React.FC<Props> = ({
               placeholder={isNo ? "navn@firma.no" : "name@company.com"}
               style={{
                 width: "100%",
-                padding: "0.65rem 0.75rem",
+                padding: "0.7rem 0.8rem",
                 borderRadius: 12,
                 border: showEmailError
-                  ? "1px solid rgba(255,80,80,0.7)"
-                  : "1px solid rgba(255,255,255,0.18)",
-                background: "rgba(0,0,0,0.10)",
+                  ? "1px solid rgba(255,80,80,0.75)"
+                  : "1px solid rgba(255,255,255,0.22)",
+                background: "rgba(255,255,255,0.06)",
                 color: "inherit",
                 outline: "none",
               }}
             />
-            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6 }}>
+            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>
               {t.emailHelp}
             </div>
             {showEmailError && (
@@ -373,13 +375,13 @@ const PaywallModal: React.FC<Props> = ({
                 onClick={startTrial}
                 disabled={busy}
                 style={{
-                  padding: "0.7rem 1rem",
+                  padding: "0.75rem 1rem",
                   borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.18)",
+                  border: "1px solid rgba(255,255,255,0.22)",
                   background: "rgba(255,255,255,0.10)",
                   color: "inherit",
                   cursor: busy ? "default" : "pointer",
-                  fontWeight: 800,
+                  fontWeight: 900,
                 }}
               >
                 {t.startTrial}
@@ -392,10 +394,10 @@ const PaywallModal: React.FC<Props> = ({
 
               {/* Billing period */}
               <div style={{ marginTop: "0.9rem" }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>
                   {t.periodLabel}
                 </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       type="radio"
@@ -419,10 +421,10 @@ const PaywallModal: React.FC<Props> = ({
 
               {/* Purchase type */}
               <div style={{ marginTop: "0.9rem" }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>
                   {t.typeLabel}
                 </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                   <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       type="radio"
@@ -450,13 +452,13 @@ const PaywallModal: React.FC<Props> = ({
                   onClick={goToCheckout}
                   disabled={busy}
                   style={{
-                    padding: "0.7rem 1rem",
+                    padding: "0.75rem 1rem",
                     borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.18)",
+                    border: "1px solid rgba(255,255,255,0.22)",
                     background: "rgba(255,255,255,0.10)",
                     color: "inherit",
                     cursor: busy ? "default" : "pointer",
-                    fontWeight: 800,
+                    fontWeight: 900,
                   }}
                 >
                   {t.goToCheckout}
@@ -470,18 +472,14 @@ const PaywallModal: React.FC<Props> = ({
             <div
               style={{
                 marginTop: "1rem",
-                padding: "0.75rem 0.85rem",
+                padding: "0.75rem 0.9rem",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(0,0,0,0.10)",
-                opacity: 0.95,
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(255,255,255,0.06)",
+                opacity: 0.98,
               }}
             >
-              {error ? (
-                <div>{error}</div>
-              ) : (
-                <div>{status}</div>
-              )}
+              {error ? <div>{error}</div> : <div>{status}</div>}
             </div>
           )}
         </div>
