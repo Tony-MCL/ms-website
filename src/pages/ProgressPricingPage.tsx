@@ -16,9 +16,13 @@ const DEFAULT_WORKER_BASE =
 const WORKER_BASE_URL =
   (import.meta as any).env?.VITE_PROGRESS_WORKER_BASE_URL || DEFAULT_WORKER_BASE;
 
-// Pris (intro)
-const PRICE_PRO_INTRO_NO = "129 NOK / bruker / måned (eks. mva)";
-const PRICE_PRO_INTRO_EN = "129 NOK / user / month (ex. VAT)";
+// Intropriser (eks mva)
+const PRO_MONTH_EX_VAT = 129;
+const PRO_YEAR_EX_VAT = 1290;
+
+// MVA for visning i modal
+const VAT_RATE = 0.25;
+const CURRENCY = "NOK";
 
 const ProgressPricingPage: React.FC = () => {
   const { lang } = useI18n();
@@ -26,11 +30,6 @@ const ProgressPricingPage: React.FC = () => {
 
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallMode, setPaywallMode] = useState<"trial" | "buy">("buy");
-
-  const introPriceLabel = useMemo(
-    () => (isNo ? PRICE_PRO_INTRO_NO : PRICE_PRO_INTRO_EN),
-    [isNo]
-  );
 
   const title = isNo ? "Priser og lisens" : "Pricing & license";
   const lead = isNo
@@ -99,6 +98,11 @@ const ProgressPricingPage: React.FC = () => {
 
   const buyLabel = isNo ? "Kjøp Pro-lisens" : "Buy Pro license";
   const startTrialLabel = isNo ? "Start trial →" : "Start trial →";
+
+  const priceHeader = isNo ? "Pris" : "Price";
+  const priceLine = isNo
+    ? `${PRO_MONTH_EX_VAT} kr/mnd eller ${PRO_YEAR_EX_VAT} kr/år (eks. mva)`
+    : `${PRO_MONTH_EX_VAT} NOK/mo or ${PRO_YEAR_EX_VAT} NOK/yr (ex. VAT)`;
 
   function openTrial() {
     setPaywallMode("trial");
@@ -201,7 +205,8 @@ const ProgressPricingPage: React.FC = () => {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>{proTitle}</h3>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontWeight: 700 }}>{introPriceLabel}</div>
+              <div style={{ fontWeight: 700 }}>{priceHeader}</div>
+              <div style={{ fontSize: 13, opacity: 0.9 }}>{priceLine}</div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>{introNote}</div>
             </div>
           </div>
@@ -226,8 +231,6 @@ const ProgressPricingPage: React.FC = () => {
               onClick={openBuy}
               className="hero-cta"
               style={{
-                // hero-cta er en <Link>-stil i temaet ditt,
-                // så her tvinger vi litt “lenke-look” på en button:
                 border: "none",
                 cursor: "pointer",
               }}
@@ -249,7 +252,10 @@ const ProgressPricingPage: React.FC = () => {
         onClose={() => setPaywallOpen(false)}
         lang={lang}
         workerBaseUrl={WORKER_BASE_URL}
-        introPriceLabel={introPriceLabel}
+        priceMonthExVat={PRO_MONTH_EX_VAT}
+        priceYearExVat={PRO_YEAR_EX_VAT}
+        vatRate={VAT_RATE}
+        currency={CURRENCY}
       />
     </main>
   );
