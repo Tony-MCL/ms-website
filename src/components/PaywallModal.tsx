@@ -1,4 +1,6 @@
+// src/components/PaywallModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useAuthUser } from "../auth/useAuthUser";
 
 type Mode = "trial" | "buy";
 type BillingPeriod = "month" | "year";
@@ -9,550 +11,266 @@ type Props = {
   mode: Mode;
   onClose: () => void;
 
-  lang: string; // "no" | "en"
+  lang: string;
   workerBaseUrl: string;
 
-  // Pricing (ex VAT) shown in modal
-  priceMonthExVat: number; // e.g. 129
-  priceYearExVat: number; // e.g. 1290
-  vatRate: number; // e.g. 0.25
-
-  currency: string; // "NOK"
+  priceMonthExVat: number;
+  priceYearExVat: number;
+  vatRate: number;
+  currency: string;
 };
 
 function clampUrlBase(u: string) {
   return (u || "").replace(/\/+$/, "");
 }
 
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-
-function getIsDarkTheme() {
-  return document.documentElement.getAttribute("data-theme") === "dark";
-}
-
-function roundKr(v: number) {
-  return Math.round(v);
-}
-
 function formatKr(n: number, lang: string) {
-  const r = roundKr(n);
-  const isNo = lang === "no";
-  return isNo ? `${r} kr` : `${r} NOK`;
+  const r = Math.round(n);
+  return lang === "no" ? `${r} kr` : `${r} NOK`;
 }
 
-const PaywallModal: React.FC<Props> = ({
-  open,
-  mode,
-  onClose,
-  lang,
-  workerBaseUrl,
-  priceMonthExVat,
-  priceYearExVat,
-  vatRate,
-  currency,
-}) => {
+export default function PaywallModal(props: Props) {
+  const {
+    open,
+    mode,
+    onClose,
+    lang,
+    workerBaseUrl,
+    priceMonthExVat,
+    priceYearExVat,
+    vatRate,
+  } = props;
+
   const isNo = lang === "no";
+  const apiBase = useMemo(() => clampUrlBase(workerBaseUrl), [workerBaseUrl]);
 
-  // ============================
-  // JUSTER ROUTES HER VED BEHOV
-  // ============================
-  const ROUTE_TRIAL_START = "/api/trial/start";
-  const ROUTE_CHECKOUT_CREATE = "/api/checkout/create";
-  // ============================
-
-  const base = useMemo(() => clampUrlBase(workerBaseUrl), [workerBaseUrl]);
+  const {
+    user,
+    ready,
+    signIn,
+    register,
+    getIdToken,
+  } = useAuthUser();
 
   const [email, setEmail] = useState("");
-  const [emailTouched, setEmailTouched] = useState(false);
+  const [password, setPassword] = useState("");
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("month");
-  const [purchaseType, setPurchaseType] = useState<PurchaseType>("subscription");
+  const [purchaseType, setPurchaseType] =
+    useState<PurchaseType>("subscription");
 
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Theme awareness while open
-  const [isDark, setIsDark] = useState(() => getIsDarkTheme());
   useEffect(() => {
     if (!open) return;
-
-    setIsDark(getIsDarkTheme());
-
-    const el = document.documentElement;
-    const obs = new MutationObserver(() => {
-      setIsDark(getIsDarkTheme());
-    });
-    obs.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
-
-    return () => obs.disconnect();
-  }, [open]);
-
-  // Reset per open/mode
-  useEffect(() => {
-    if (!open) return;
-
     setStatus(null);
     setError(null);
     setBusy(false);
-    setEmailTouched(false);
-
-    if (mode === "buy") {
-      setBillingPeriod("month");
-      setPurchaseType("subscription");
-    }
+    setEmail("");
+    setPassword("");
   }, [open, mode]);
-
-  // Close on ESC
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
 
   if (!open) return null;
 
   const t = {
     close: isNo ? "Lukk" : "Close",
+    email: isNo ? "E-post" : "Email",
+    password: isNo ? "Passord" : "Password",
 
-    emailLabel: isNo ? "E-postadresse" : "Email address",
-    emailHelp: isNo
-      ? "Brukes kun for å aktivere trial / knytte lisens til bruker."
-      : "Used to activate trial / connect license to a user.",
+    signin: isNo ? "Logg inn" : "Sign in",
+    register: isNo ? "Registrer & start trial" : "Register & start trial",
 
-    trialTitle: isNo ? "Prøv Pro gratis i 10 dager" : "Try Pro free for 10 days",
-    trialBody: isNo
-      ? "Full Pro-funksjonalitet i 10 dager. Registrer deg med e-postadresse for å starte."
-      : "Full Pro functionality for 10 days. Register with an email address to start.",
-    startTrial: isNo ? "Start 10-dagers trial" : "Start 10-day trial",
-
+    trialTitle: isNo ? "10 dagers gratis Pro-trial" : "10 day free Pro trial",
     buyTitle: isNo ? "Kjøp Pro-lisens" : "Buy Pro license",
-    buyBody: isNo
-      ? "Velg betalingsperiode og kjøpstype. Du blir sendt til checkout."
-      : "Choose billing period and purchase type. You’ll be redirected to checkout.",
 
-    periodLabel: isNo ? "Betalingsperiode" : "Billing period",
     month: isNo ? "Månedlig" : "Monthly",
     year: isNo ? "Årlig" : "Yearly",
 
-    typeLabel: isNo ? "Kjøpstype" : "Purchase type",
     subscription: isNo ? "Abonnement" : "Subscription",
     oneTime: isNo ? "Engangsbetaling" : "One-time payment",
 
-    calcPrice: isNo ? "Pris" : "Price",
-    calcVat: isNo ? "Mva" : "VAT",
-    calcTotal: isNo ? "Pris inkl. mva" : "Price incl. VAT",
-
-    perMonth: isNo ? "kr/mnd" : "NOK/mo",
-    perYear: isNo ? "kr/år" : "NOK/yr",
-
-    goToCheckout: isNo ? "Gå til betaling" : "Go to checkout",
-
-    invalidEmail: isNo ? "Skriv inn en gyldig e-postadresse." : "Enter a valid email address.",
-    networkError: isNo
-      ? "Noe gikk galt. Sjekk at Worker-endepunktene er riktige."
-      : "Something went wrong. Check that the Worker endpoints are correct.",
+    checkout: isNo ? "Gå til betaling" : "Go to checkout",
   };
-
-  const emailOk = isValidEmail(email);
-  const showEmailError = emailTouched && !emailOk;
 
   const selectedExVat =
     billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
 
   const vatAmount = selectedExVat * vatRate;
-  const selectedInclVat = selectedExVat + vatAmount;
+  const totalInclVat = selectedExVat + vatAmount;
 
-  // Suffix rules exactly as you described:
-  // - Month + subscription: /mnd
-  // - Year + subscription: /år
-  // - Month + one-time: no suffix
-  // - Year + one-time: /år (per your example)
-  const totalSuffix =
-  purchaseType === "one_time"
-    ? ""
-    : billingPeriod === "year"
-      ? ` ${t.perYear}`
-      : ` ${t.perMonth}`;
+  async function requireToken(): Promise<string> {
+    const token = await getIdToken(true);
+    if (!token) throw new Error("Not authenticated");
+    return token;
+  }
 
-  async function startTrial() {
-    setEmailTouched(true);
-    setStatus(null);
-    setError(null);
-    if (!emailOk) return;
-
+  async function handleRegisterAndTrial() {
     setBusy(true);
+    setError(null);
     try {
-      const res = await fetch(`${base}${ROUTE_TRIAL_START}`, {
+      await register(email.trim(), password);
+      const token = await requireToken();
+
+      await fetch(`${apiBase}/trial/start`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), lang }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ product: "progress" }),
       });
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `HTTP ${res.status}`);
-      }
-
-      let msg = isNo
-        ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
-        : "Trial started. You can now use Pro features for 10 days.";
-      try {
-        const data = await res.json();
-        if (data?.message) msg = String(data.message);
-      } catch {
-        // ignore
-      }
-      setStatus(msg);
+      setStatus(
+        isNo
+          ? "Trial startet. Du har nå Pro i 10 dager."
+          : "Trial started. You now have Pro for 10 days."
+      );
     } catch (e: any) {
-      setError(e?.message || t.networkError);
+      setError(e?.message || "Trial failed");
     } finally {
       setBusy(false);
     }
   }
 
-  async function goToCheckout() {
-    setEmailTouched(true);
-    setStatus(null);
-    setError(null);
-    if (!emailOk) return;
-
+  async function handleCheckout() {
     setBusy(true);
+    setError(null);
+
     try {
-      const successUrl = window.location.origin + "/progress/app";
+      if (!user) {
+        await signIn(email.trim(), password);
+      }
+
+      const token = await requireToken();
+
+      const successUrl =
+        window.location.origin +
+        "/progress/app?from=checkout&refresh=1";
       const cancelUrl = window.location.href;
 
-      const res = await fetch(`${base}${ROUTE_CHECKOUT_CREATE}`, {
+      const res = await fetch(`${apiBase}/checkout/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          email: email.trim(),
-          lang,
-          billingPeriod,
+          interval: billingPeriod,
           purchaseType,
           successUrl,
           cancelUrl,
         }),
       });
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `HTTP ${res.status}`);
-      }
+      const data = await res.json();
+      if (!data?.url) throw new Error("No checkout url returned");
 
-      const data = await res.json().catch(() => null);
-      const url = data?.url || data?.checkoutUrl;
-
-      if (!url || typeof url !== "string") {
-        throw new Error(
-          isNo
-            ? "Worker returnerte ingen checkout-url (forventet { url })."
-            : "Worker returned no checkout url (expected { url })."
-        );
-      }
-
-      window.location.assign(url);
+      window.location.assign(data.url);
     } catch (e: any) {
-      setError(e?.message || t.networkError);
+      setError(e?.message || "Checkout failed");
     } finally {
       setBusy(false);
     }
   }
 
-  // Theme-driven styling
-  const overlayBg = isDark ? "rgba(0,0,0,0.86)" : "rgba(0,0,0,0.45)";
-  const overlayBlur = isDark ? "blur(10px)" : "blur(6px)";
-
-  const panelBg = "var(--mcl-surface)";
-  const panelBorder = "1px solid var(--mcl-border)";
-  const panelShadow = isDark
-    ? "0 18px 60px rgba(0,0,0,0.55)"
-    : "0 18px 60px rgba(0,0,0,0.20)";
-
-  const line = isDark
-    ? "1px solid rgba(255,255,255,0.12)"
-    : "1px solid rgba(0,0,0,0.10)";
-
-  const inputBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
-  const chipBorder = isDark
-    ? "1px solid rgba(255,255,255,0.20)"
-    : "1px solid rgba(0,0,0,0.16)";
-
-  const title = mode === "trial" ? t.trialTitle : t.buyTitle;
-  const sub = mode === "trial" ? t.trialBody : t.buyBody;
-
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={title}
       onClick={onClose}
       style={{
         position: "fixed",
-        top: "var(--header-height)",
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: overlayBg,
-        backdropFilter: overlayBlur,
-        WebkitBackdropFilter: overlayBlur,
+        inset: 0,
+        background: "rgba(0,0,0,0.6)",
         zIndex: 9999,
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
+        justifyContent: "center",
         padding: "1rem",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(760px, 100%)",
-          maxHeight: "calc(100vh - var(--header-height) - 2rem)",
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: 16,
-          overflow: "hidden",
-          background: panelBg,
-          border: panelBorder,
-          boxShadow: panelShadow,
+          background: "var(--mcl-surface)",
           color: "var(--mcl-text)",
+          borderRadius: 16,
+          width: "min(720px,100%)",
+          padding: "1.2rem",
         }}
       >
-        {/* Top bar: Title + close */}
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            padding: "0.9rem 1rem",
-            borderBottom: line,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <strong style={{ fontSize: 16 }}>{title}</strong>
-            <div style={{ fontSize: 13, opacity: 0.8, color: "var(--mcl-text-dim)" }}>
-              {sub}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: "0.45rem 0.7rem",
-              borderRadius: 10,
-              border: chipBorder,
-              background: inputBg,
-              color: "inherit",
-              cursor: "pointer",
-              flex: "0 0 auto",
-              height: 36,
-            }}
-          >
-            {t.close}
-          </button>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <strong>
+            {mode === "trial" ? t.trialTitle : t.buyTitle}
+          </strong>
+          <button onClick={onClose}>{t.close}</button>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: "1rem", overflow: "auto" }}>
-          {/* Email */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-              {t.emailLabel}
-            </label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setEmailTouched(true)}
-              placeholder={isNo ? "navn@firma.no" : "name@company.com"}
-              style={{
-                width: "100%",
-                padding: "0.7rem 0.8rem",
-                borderRadius: 12,
-                border: showEmailError
-                  ? "1px solid rgba(255,80,80,0.75)"
-                  : chipBorder,
-                background: inputBg,
-                color: "inherit",
-                outline: "none",
-              }}
-            />
-            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, color: "var(--mcl-text-dim)" }}>
-              {t.emailHelp}
+        {!user && (
+          <>
+            <div style={{ marginTop: 12 }}>
+              <label>{t.email}</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
-            {showEmailError && (
-              <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                {t.invalidEmail}
-              </div>
-            )}
-          </div>
 
+            <div style={{ marginTop: 8 }}>
+              <label>{t.password}</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+
+        {mode === "buy" && (
+          <>
+            <div style={{ marginTop: 12 }}>
+              <label>{t.month}</label>
+              <input
+                type="radio"
+                checked={billingPeriod === "month"}
+                onChange={() => setBillingPeriod("month")}
+              />
+              <label>{t.year}</label>
+              <input
+                type="radio"
+                checked={billingPeriod === "year"}
+                onChange={() => setBillingPeriod("year")}
+              />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <strong>
+                {formatKr(totalInclVat, lang)}
+              </strong>
+            </div>
+          </>
+        )}
+
+        <div style={{ marginTop: 16 }}>
           {mode === "trial" ? (
-            <button
-              type="button"
-              onClick={startTrial}
-              disabled={busy}
-              style={{
-                padding: "0.8rem 1rem",
-                borderRadius: 12,
-                border: chipBorder,
-                background: "rgba(255,255,255,0.10)",
-                color: "inherit",
-                cursor: busy ? "default" : "pointer",
-                fontWeight: 900,
-              }}
-            >
-              {t.startTrial}
+            <button disabled={busy || !ready} onClick={handleRegisterAndTrial}>
+              {t.register}
             </button>
           ) : (
-            <>
-              {/* Left: radios | Right: calculation */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr minmax(220px, 300px)",
-                  gap: "1rem",
-                  alignItems: "start",
-                }}
-              >
-                {/* LEFT */}
-                <div>
-                  <div style={{ marginBottom: "0.9rem" }}>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.periodLabel}</div>
-                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input
-                          type="radio"
-                          name="billingPeriod"
-                          checked={billingPeriod === "month"}
-                          onChange={() => setBillingPeriod("month")}
-                        />
-                        {t.month}
-                      </label>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input
-                          type="radio"
-                          name="billingPeriod"
-                          checked={billingPeriod === "year"}
-                          onChange={() => setBillingPeriod("year")}
-                        />
-                        {t.year}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.typeLabel}</div>
-                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input
-                          type="radio"
-                          name="purchaseType"
-                          checked={purchaseType === "subscription"}
-                          onChange={() => setPurchaseType("subscription")}
-                        />
-                        {t.subscription}
-                      </label>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input
-                          type="radio"
-                          name="purchaseType"
-                          checked={purchaseType === "one_time"}
-                          onChange={() => setPurchaseType("one_time")}
-                        />
-                        {t.oneTime}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT: “Regnestykke” */}
-                <div
-                  style={{
-                    border: chipBorder,
-                    background: inputBg,
-                    borderRadius: 12,
-                    padding: "0.85rem 0.9rem",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      rowGap: 8,
-                      columnGap: 14,
-                      alignItems: "baseline",
-                    }}
-                  >
-                    <div style={{ fontWeight: 800 }}>{t.calcPrice}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 800 }}>
-                      {formatKr(selectedExVat, lang)}
-                    </div>
-
-                    <div style={{ fontWeight: 800 }}>{t.calcVat}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 800 }}>
-                      {formatKr(vatAmount, lang)}
-                    </div>
-
-                    <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 900 }}>
-                      {formatKr(selectedInclVat, lang)}
-                      {purchaseType === "subscription" &&
-                        (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, color: "var(--mcl-text-dim)" }}>
-                    {currency}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: "1.1rem" }}>
-                <button
-                  type="button"
-                  onClick={goToCheckout}
-                  disabled={busy}
-                  style={{
-                    padding: "0.8rem 1rem",
-                    borderRadius: 12,
-                    border: chipBorder,
-                    background: "rgba(255,255,255,0.10)",
-                    color: "inherit",
-                    cursor: busy ? "default" : "pointer",
-                    fontWeight: 900,
-                  }}
-                >
-                  {t.goToCheckout}
-                </button>
-              </div>
-            </>
-          )}
-
-          {(status || error) && (
-            <div
-              style={{
-                marginTop: "1rem",
-                padding: "0.75rem 0.9rem",
-                borderRadius: 12,
-                border: chipBorder,
-                background: inputBg,
-                opacity: 0.98,
-              }}
-            >
-              {error ? <div>{error}</div> : <div>{status}</div>}
-            </div>
+            <button disabled={busy || !ready} onClick={handleCheckout}>
+              {t.checkout}
+            </button>
           )}
         </div>
+
+        {status && <div style={{ marginTop: 12 }}>{status}</div>}
+        {error && (
+          <div style={{ marginTop: 12, color: "red" }}>{error}</div>
+        )}
       </div>
     </div>
   );
-};
-
-export default PaywallModal;
+}
