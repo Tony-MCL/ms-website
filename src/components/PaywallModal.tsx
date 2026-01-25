@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import AuthPanel from "./AuthPanel";
-import { useAuthUser } from "./useAuthUser";
 
 type Mode = "trial" | "buy";
 type BillingPeriod = "month" | "year";
@@ -22,101 +20,152 @@ type Props = {
   currency: string; // e.g. "NOK"
 };
 
-const PaywallModal: React.FC<Props> = ({
-  open,
-  mode,
-  onClose,
-  lang,
-  workerBaseUrl,
-  priceMonthExVat,
-  priceYearExVat,
-  vatRate,
-  currency,
-}) => {
-  const isNo = lang === "no";
+const LS_TOKEN = "ms_idToken";
+const LS_EMAIL = "ms_email";
 
-  const { user, loading: authLoading, getIdToken } = useAuthUser();
+function money(n: number, currency: string) {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
+  } catch {
+    return `${n.toFixed(0)} ${currency}`;
+  }
+}
 
-  const t = useMemo(() => {
-    if (isNo) {
-      return {
-        titleTrial: "Start prøveperiode",
-        titleBuy: "Oppgrader til Pro",
+function firebaseEndpoint(path: string, apiKey: string) {
+  return `https://identitytoolkit.googleapis.com/v1/${path}?key=${encodeURIComponent(apiKey)}`;
+}
 
-        emailLabel: "E-post",
-        emailHint: "Bruk samme e-post som du logger inn med.",
-        companyTitle: "Firmainfo",
-        orgNameLabel: "Firmanavn",
-        orgNrLabel: "Org.nr (9 siffer)",
-        contactNameLabel: "Kontaktperson",
-        phoneLabel: "Telefon",
+async function firebaseSignIn(apiKey: string, email: string, password: string) {
+  const r = await fetch(firebaseEndpoint("accounts:signInWithPassword", apiKey), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password, returnSecureToken: true }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(String(data?.error?.message || "AUTH_FAILED"));
+  return { idToken: String(data.idToken || ""), email: String(data.email || "") };
+}
 
-        billingTitle: "Betaling",
-        billingPeriodLabel: "Faktureringsperiode",
-        perMonth: "per mnd",
-        perYear: "per år",
+async function firebaseSignUp(apiKey: string, email: string, password: string) {
+  const r = await fetch(firebaseEndpoint("accounts:signUp", apiKey), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password, returnSecureToken: true }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(String(data?.error?.message || "AUTH_FAILED"));
+  return { idToken: String(data.idToken || ""), email: String(data.email || "") };
+}
 
-        purchaseTypeLabel: "Kjøpstype",
-        purchaseSub: "Abonnement",
-        purchaseOneTime: "Engangsbetaling",
+async function workerJson<T>(
+  url: string,
+  opts: { method: "GET" | "POST"; idToken?: string; body?: any }
+): Promise<T> {
+  const r = await fetch(url, {
+    method: opts.method,
+    headers: {
+      "content-type": "application/json",
+      ...(opts.idToken ? { Authorization: `Bearer ${opts.idToken}` } : {}),
+    },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(String((data as any)?.error || `HTTP_${r.status}`));
+  return data as T;
+}
 
-        buttonTrial: "Start prøveperiode",
-        buttonCheckout: "Gå til betaling",
-        buttonClose: "Lukk",
+export default function PaywallModal(props: Props) {
+  const {
+    open,
+    mode,
+    onClose,
+    lang,
+    workerBaseUrl,
+    priceMonthExVat,
+    priceYearExVat,
+    vatRate,
+    currency,
+  } = props;
 
-        trialInfo:
-          "Prøveperioden gir deg Pro-funksjoner i 10 dager. Etterpå blir prosjekter arkivert (ikke slettet) iht. 90-dagers regel, og kan gjenopprettes når du aktiverer Pro igjen.",
-        buyInfo:
-          "Du fyller inn firmainfo én gang. Etter betaling oppgraderes kontoen automatisk når Stripe-webhooken er mottatt.",
-
-        errorEmail: "Skriv inn gyldig e-post.",
-        errorOrgName: "Firmanavn må fylles inn.",
-        errorOrgNr: "Org.nr må være 9 siffer.",
-        errorSignin: "Du må logge inn før du kan fortsette.",
-      };
-    }
-
-    return {
-      titleTrial: "Start trial",
-      titleBuy: "Upgrade to Pro",
-
-      emailLabel: "Email",
-      emailHint: "Use the same email you sign in with.",
-      companyTitle: "Company info",
-      orgNameLabel: "Company name",
-      orgNrLabel: "Org. no. (9 digits)",
-      contactNameLabel: "Contact person",
-      phoneLabel: "Phone",
-
-      billingTitle: "Payment",
-      billingPeriodLabel: "Billing period",
-      perMonth: "per month",
-      perYear: "per year",
-
-      purchaseTypeLabel: "Purchase type",
-      purchaseSub: "Subscription",
-      purchaseOneTime: "One-time payment",
-
-      buttonTrial: "Start trial",
-      buttonCheckout: "Proceed to checkout",
-      buttonClose: "Close",
-
-      trialInfo:
-        "Trial gives you Pro features for 10 days. After that, projects are archived (not deleted) per the 90-day rule, and can be restored when you reactivate Pro.",
-      buyInfo:
-        "You enter company info once. After payment, your account is upgraded automatically when the Stripe webhook is received.",
-
-      errorEmail: "Please enter a valid email.",
-      errorOrgName: "Company name is required.",
-      errorOrgNr: "Org. no. must be 9 digits.",
-      errorSignin: "Please sign in to continue.",
+  const copy = useMemo(() => {
+    const no = {
+      title: mode === "trial" ? "Start prøveperiode" : "Oppgrader til Pro",
+      intro:
+        "For å opprette konto (og senere oppgradere til Pro) trenger vi firmainfo én gang. Dette knyttes til organisasjonen din.",
+      authTitle: "Logg inn / Opprett konto",
+      email: "E-post",
+      password: "Passord",
+      signIn: "Logg inn",
+      signUp: "Opprett konto",
+      signOut: "Logg ut",
+      orgTitle: "Firmainfo",
+      orgName: "Firmanavn",
+      orgNr: "Org.nr",
+      contactName: "Kontaktperson",
+      phone: "Telefon",
+      required: "Påkrevd",
+      choose: "Velg",
+      billing: "Fakturering",
+      month: "Måned",
+      year: "År",
+      purchaseType: "Kjøpstype",
+      subscription: "Abonnement",
+      oneTime: "Engangsbetaling",
+      seats: "Antall lisenser",
+      startTrial: "Start prøveperiode (10 dager)",
+      goCheckout: "Gå til betaling",
+      close: "Lukk",
+      statusReady: "Klar",
+      statusWorking: "Jobber…",
+      hint:
+        "Du blir sendt til Stripe for betaling. Når Stripe er ferdig, oppdateres Pro automatisk via webhook.",
+      mustLogin: "Du må være logget inn først.",
+      mustFillOrg: "Fyll ut firmainfo først.",
     };
-  }, [isNo]);
+    const en = {
+      title: mode === "trial" ? "Start trial" : "Upgrade to Pro",
+      intro:
+        "To create an account (and later upgrade to Pro) we need your company details once. This will be linked to your organization.",
+      authTitle: "Sign in / Create account",
+      email: "Email",
+      password: "Password",
+      signIn: "Sign in",
+      signUp: "Create account",
+      signOut: "Sign out",
+      orgTitle: "Company details",
+      orgName: "Company name",
+      orgNr: "Org. number",
+      contactName: "Contact person",
+      phone: "Phone",
+      required: "Required",
+      choose: "Choose",
+      billing: "Billing",
+      month: "Monthly",
+      year: "Yearly",
+      purchaseType: "Purchase type",
+      subscription: "Subscription",
+      oneTime: "One-time payment",
+      seats: "Number of seats",
+      startTrial: "Start trial (10 days)",
+      goCheckout: "Proceed to checkout",
+      close: "Close",
+      statusReady: "Ready",
+      statusWorking: "Working…",
+      hint:
+        "You will be redirected to Stripe. When Stripe completes, Pro is updated automatically via webhook.",
+      mustLogin: "You must be signed in first.",
+      mustFillOrg: "Please fill in company details first.",
+    };
+    return lang === "en" ? en : no;
+  }, [lang, mode]);
 
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
-  const [emailTouched, setEmailTouched] = useState(false);
+  const [password, setPassword] = useState("");
 
-  // Company info (required before trial/checkout)
+  const [idToken, setIdToken] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
+
   const [orgName, setOrgName] = useState("");
   const [orgNr, setOrgNr] = useState("");
   const [contactName, setContactName] = useState("");
@@ -124,619 +173,558 @@ const PaywallModal: React.FC<Props> = ({
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("month");
   const [purchaseType, setPurchaseType] = useState<PurchaseType>("subscription");
+  const [quantity, setQuantity] = useState<number>(1);
 
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [err, setErr] = useState<string>("");
 
-  const emailOk = useMemo(() => {
-    const e = email.trim().toLowerCase();
-    if (!e) return false;
-    // super basic
-    return /.+@.+\..+/.test(e);
-  }, [email]);
+  const apiKey = (import.meta as any).env?.VITE_FIREBASE_API_KEY as string | undefined;
 
   useEffect(() => {
     if (!open) return;
-    setBusy(false);
-    setStatus(null);
-    setError(null);
-    setEmailTouched(false);
+    setErr("");
 
-    if (mode === "trial") {
-      setBillingPeriod("month");
-      setPurchaseType("subscription");
+    const t = localStorage.getItem(LS_TOKEN) || "";
+    const e = localStorage.getItem(LS_EMAIL) || "";
+    if (t) setIdToken(t);
+    if (e) setUserEmail(e);
+
+    if (e && !email) setEmail(e);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!open) return null;
+
+  const priceExVat = billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
+  const priceIncVat = Math.round(priceExVat * (1 + vatRate));
+
+  const canUse =
+    Boolean(idToken) &&
+    Boolean(orgName.trim()) &&
+    Boolean(orgNr.trim()) &&
+    Boolean(contactName.trim()) &&
+    Boolean(phone.trim());
+
+  async function doAuth() {
+    setErr("");
+    if (!apiKey) {
+      setErr("MISSING_VITE_FIREBASE_API_KEY");
+      return;
     }
-    if (mode === "buy") {
-      setBillingPeriod("month");
-      setPurchaseType("subscription");
-    }
-  }, [open, mode]);
-
-  // Keep email in sync with authenticated user
-  useEffect(() => {
-    if (!open) return;
-    if (user?.email) setEmail(user.email);
-  }, [open, user?.email]);
-
-  const totalMonth = useMemo(() => (priceMonthExVat * (1 + vatRate)).toFixed(0), [priceMonthExVat, vatRate]);
-  const totalYear = useMemo(() => (priceYearExVat * (1 + vatRate)).toFixed(0), [priceYearExVat, vatRate]);
-
-  const priceLabel = billingPeriod === "year" ? priceYearExVat : priceMonthExVat;
-  const totalLabel = billingPeriod === "year" ? totalYear : totalMonth;
-
-  const totalSuffix =
-    purchaseType === "one_time"
-      ? ""
-      : billingPeriod === "year"
-        ? ` ${t.perYear}`
-        : ` ${t.perMonth}`;
-
-  function normalizeOrgNr(v: string) {
-    return String(v || "").replace(/\s+/g, "").trim();
-  }
-
-  function validateBeforeContinue(): string | null {
-    if (!user) return t.errorSignin;
-    if (!email.trim() || !emailOk) return t.errorEmail;
-    if (!orgName.trim()) return t.errorOrgName;
-    const on = normalizeOrgNr(orgNr);
-    if (!/^\d{9}$/.test(on)) return t.errorOrgNr;
-    return null;
-  }
-
-  const orgNrNormalized = useMemo(() => normalizeOrgNr(orgNr), [orgNr]);
-
-  const ROUTE_TRIAL_START = `${workerBaseUrl.replace(/\/$/, "")}/api/trial/start`;
-  const ROUTE_CHECKOUT_CREATE = `${workerBaseUrl.replace(/\/$/, "")}/api/checkout/create`;
-
-  const returnBase = useMemo(() => {
-    const origin = window.location.origin;
-    return origin;
-  }, []);
-
-  const successUrl = useMemo(() => `${returnBase}/progress/app?checkout=success`, [returnBase]);
-  const cancelUrl = useMemo(() => `${returnBase}/progress/app?checkout=cancel`, [returnBase]);
-
-  async function startTrial() {
-    setEmailTouched(true);
-    setStatus(null);
-    setError(null);
-    const v = validateBeforeContinue();
-    if (v) {
-      setError(v);
+    const e = email.trim();
+    const p = password;
+    if (!e || !p) {
+      setErr("MISSING_EMAIL_OR_PASSWORD");
       return;
     }
 
     setBusy(true);
     try {
-      const idToken = await getIdToken();
-      if (!idToken) throw new Error(isNo ? "Du er ikke innlogget." : "Not signed in.");
+      const res =
+        authMode === "signin"
+          ? await firebaseSignIn(apiKey, e, p)
+          : await firebaseSignUp(apiKey, e, p);
 
-      const r = await fetch(ROUTE_TRIAL_START, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          product: "progress",
-          orgName: orgName.trim(),
-          orgNr: orgNrNormalized,
-          contactName: contactName.trim() || "",
-          phone: phone.trim() || "",
-        }),
-      });
+      if (!res.idToken) throw new Error("NO_ID_TOKEN");
+      setIdToken(res.idToken);
+      setUserEmail(res.email || e);
 
-      const data = await r.json().catch(() => null);
-
-      if (!r.ok) {
-        const e = data?.error ? String(data.error) : `HTTP_${r.status}`;
-        throw new Error(e);
-      }
-
-      setStatus(isNo ? "✅ Prøveperiode startet. Du kan lukke dette vinduet." : "✅ Trial started. You can close this window.");
+      localStorage.setItem(LS_TOKEN, res.idToken);
+      localStorage.setItem(LS_EMAIL, (res.email || e).toLowerCase());
     } catch (e: any) {
-      setError(e?.message ? String(e.message) : String(e));
+      setErr(e?.message || String(e));
     } finally {
       setBusy(false);
     }
   }
 
-  async function goToCheckout() {
-    setEmailTouched(true);
-    setStatus(null);
-    setError(null);
-    const v = validateBeforeContinue();
-    if (v) {
-      setError(v);
-      return;
-    }
+  function doSignOut() {
+    setIdToken("");
+    setUserEmail("");
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_EMAIL);
+  }
+
+  async function startTrial() {
+    setErr("");
+    if (!idToken) return setErr(copy.mustLogin);
+    if (!canUse) return setErr(copy.mustFillOrg);
 
     setBusy(true);
     try {
-      const idToken = await getIdToken();
-      if (!idToken) throw new Error(isNo ? "Du er ikke innlogget." : "Not signed in.");
-
-      const r = await fetch(ROUTE_CHECKOUT_CREATE, {
+      await workerJson(`${workerBaseUrl}/api/trial/start`, {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          lang,
-          billingPeriod,
-          purchaseType,
-          quantity: 1,
+        idToken,
+        body: {
+          product: "progress",
           orgName: orgName.trim(),
-          orgNr: orgNrNormalized,
-          contactName: contactName.trim() || "",
-          phone: phone.trim() || "",
-          tier: "intro",
-          successUrl,
-          cancelUrl,
-        }),
+          orgNr: orgNr.replace(/\s+/g, "").trim(),
+          contactName: contactName.trim(),
+          phone: phone.trim(),
+        },
       });
 
-      const data = await r.json().catch(() => null);
-
-      if (!r.ok) {
-        const e = data?.error ? String(data.error) : `HTTP_${r.status}`;
-        throw new Error(e);
-      }
-
-      const url = data?.url ? String(data.url) : "";
-      if (!url) throw new Error("NO_URL_RETURNED");
-      window.location.href = url;
+      onClose();
     } catch (e: any) {
-      setError(e?.message ? String(e.message) : String(e));
+      setErr(e?.message || String(e));
+    } finally {
       setBusy(false);
     }
   }
 
-  if (!open) return null;
+  async function goCheckout() {
+    setErr("");
+    if (!idToken) return setErr(copy.mustLogin);
+    if (!canUse) return setErr(copy.mustFillOrg);
 
-  const modalBg = "rgba(0,0,0,0.66)";
-  const cardBg = "var(--card-bg, #111)";
-  const textColor = "var(--text, #fff)";
-  const mutedColor = "var(--muted, rgba(255,255,255,0.7))";
-  const borderColor = "var(--border, rgba(255,255,255,0.12))";
-  const inputBg = "var(--input-bg, rgba(255,255,255,0.06))";
-  const btnBg = "var(--btn, #2d6cdf)";
-  const btnBg2 = "var(--btn2, rgba(255,255,255,0.08))";
+    const origin = window.location.origin;
+    const successUrl = `${origin}/#/pricing?checkout=success`;
+    const cancelUrl = `${origin}/#/pricing?checkout=cancel`;
 
-  const title = mode === "trial" ? t.titleTrial : t.titleBuy;
+    setBusy(true);
+    try {
+      const res = await workerJson<{ url: string }>(`${workerBaseUrl}/api/checkout/create`, {
+        method: "POST",
+        idToken,
+        body: {
+          email: (userEmail || email).trim(),
+          lang,
+          billingPeriod,
+          purchaseType,
+          quantity,
+          tier: "intro",
 
-  const showEmailError = emailTouched && !emailOk;
+          orgName: orgName.trim(),
+          orgNr: orgNr.replace(/\s+/g, "").trim(),
+          contactName: contactName.trim(),
+          phone: phone.trim(),
+
+          successUrl,
+          cancelUrl,
+        },
+      });
+
+      if (!res?.url) throw new Error("NO_CHECKOUT_URL");
+      window.location.href = res.url;
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+      setBusy(false);
+    }
+  }
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
       style={{
         position: "fixed",
         inset: 0,
-        background: modalBg,
+        background: "rgba(0,0,0,0.55)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: 16,
         zIndex: 9999,
-        padding: "1rem",
       }}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      role="dialog"
+      aria-modal="true"
     >
       <div
         style={{
-          width: "min(720px, 100%)",
-          background: cardBg,
-          color: textColor,
-          border: `1px solid ${borderColor}`,
+          width: "min(920px, 100%)",
+          background: "#fff",
           borderRadius: 16,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-          overflow: "hidden",
+          padding: 18,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            padding: "1rem 1rem 0.75rem 1rem",
-            borderBottom: `1px solid ${borderColor}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <div style={{ fontSize: 18, fontWeight: 900 }}>{title}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <h2 style={{ margin: 0 }}>{copy.title}</h2>
+            <p style={{ margin: "8px 0 0 0", color: "#333", maxWidth: 760 }}>{copy.intro}</p>
+          </div>
 
           <button
-            type="button"
             onClick={onClose}
             style={{
-              border: `1px solid ${borderColor}`,
-              background: btnBg2,
-              color: textColor,
+              border: "1px solid #ddd",
+              background: "#fafafa",
               borderRadius: 10,
-              padding: "8px 10px",
+              padding: "8px 12px",
               cursor: "pointer",
-              fontWeight: 700,
+              height: 40,
             }}
-            disabled={busy}
           >
-            {t.buttonClose}
+            {copy.close}
           </button>
         </div>
 
-                {/* Body */}
-        <div style={{ padding: "1rem", overflow: "auto" }}>
-          {/* Auth gate */}
-          {authLoading ? (
-            <div style={{ color: mutedColor, marginBottom: "1rem" }}>{isNo ? "Laster..." : "Loading..."}</div>
-          ) : !user ? (
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontWeight: 900, marginBottom: 8 }}>{isNo ? "Logg inn for å fortsette" : "Sign in to continue"}</div>
-              <div style={{ color: mutedColor, marginBottom: 12 }}>
-                {isNo
-                  ? "Du må være innlogget før vi kan starte prøveperiode eller sende deg til betaling."
-                  : "You must be signed in before starting a trial or proceeding to checkout."}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+          {/* AUTH */}
+          <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14 }}>
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>{copy.authTitle}</div>
+
+            {idToken ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ color: "#111" }}>
+                  ✅ {userEmail || email}
+                </div>
+                <button
+                  onClick={doSignOut}
+                  disabled={busy}
+                  style={{
+                    border: "1px solid #ddd",
+                    background: "#fff",
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    cursor: busy ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {copy.signOut}
+                </button>
               </div>
-              <div
-                style={{
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: 14,
-                  padding: 12,
-                  background: "rgba(255,255,255,0.03)",
-                }}
-              >
-                <AuthPanel lang={lang as any} />
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Email (read-only) */}
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.emailLabel}</label>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <button
+                    onClick={() => setAuthMode("signin")}
+                    disabled={busy}
+                    style={{
+                      flex: 1,
+                      border: "1px solid #ddd",
+                      background: authMode === "signin" ? "#111" : "#fff",
+                      color: authMode === "signin" ? "#fff" : "#111",
+                      borderRadius: 10,
+                      padding: "10px 12px",
+                      cursor: busy ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {copy.signIn}
+                  </button>
+                  <button
+                    onClick={() => setAuthMode("signup")}
+                    disabled={busy}
+                    style={{
+                      flex: 1,
+                      border: "1px solid #ddd",
+                      background: authMode === "signup" ? "#111" : "#fff",
+                      color: authMode === "signup" ? "#fff" : "#111",
+                      borderRadius: 10,
+                      padding: "10px 12px",
+                      cursor: busy ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {copy.signUp}
+                  </button>
+                </div>
+
+                <label style={{ display: "block", fontSize: 12, color: "#333" }}>{copy.email}</label>
                 <input
                   value={email}
-                  disabled
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={busy}
                   style={{
                     width: "100%",
-                    padding: "12px 12px",
-                    borderRadius: 12,
-                    border: `1px solid ${borderColor}`,
-                    background: inputBg,
-                    color: textColor,
-                    outline: "none",
-                    opacity: 0.9,
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    marginTop: 6,
                   }}
+                  type="email"
+                  autoComplete="email"
                 />
-                <div style={{ color: mutedColor, fontSize: 12, marginTop: 6 }}>{t.emailHint}</div>
-                {showEmailError ? (
-                  <div style={{ marginTop: 8, color: "#ff7b7b", fontWeight: 700, fontSize: 13 }}>{t.errorEmail}</div>
-                ) : null}
-              </div>
 
-              {/* Company info */}
-              <div style={{ marginBottom: "1rem" }}>
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>{t.companyTitle}</div>
+                <div style={{ height: 10 }} />
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-                  <div>
-                    <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNameLabel}</label>
-                    <input
-                      value={orgName}
-                      onChange={(e) => setOrgName(e.target.value)}
-                      placeholder={isNo ? "F.eks. Mathisens Morning Coffee Labs" : "E.g. Morning Coffee Labs"}
-                      style={{
-                        width: "100%",
-                        padding: "12px 12px",
-                        borderRadius: 12,
-                        border: `1px solid ${borderColor}`,
-                        background: inputBg,
-                        color: textColor,
-                        outline: "none",
-                      }}
-                      disabled={busy}
-                    />
-                  </div>
+                <label style={{ display: "block", fontSize: 12, color: "#333" }}>{copy.password}</label>
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    marginTop: 6,
+                  }}
+                  type="password"
+                  autoComplete={authMode === "signin" ? "current-password" : "new-password"}
+                />
 
-                  <div>
-                    <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNrLabel}</label>
-                    <input
-                      value={orgNr}
-                      onChange={(e) => setOrgNr(e.target.value)}
-                      placeholder={isNo ? "9 siffer" : "9 digits"}
-                      inputMode="numeric"
-                      style={{
-                        width: "100%",
-                        padding: "12px 12px",
-                        borderRadius: 12,
-                        border: `1px solid ${borderColor}`,
-                        background: inputBg,
-                        color: textColor,
-                        outline: "none",
-                      }}
-                      disabled={busy}
-                    />
-                  </div>
+                <div style={{ height: 12 }} />
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div>
-                      <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.contactNameLabel}</label>
-                      <input
-                        value={contactName}
-                        onChange={(e) => setContactName(e.target.value)}
-                        placeholder={isNo ? "Valgfritt" : "Optional"}
-                        style={{
-                          width: "100%",
-                          padding: "12px 12px",
-                          borderRadius: 12,
-                          border: `1px solid ${borderColor}`,
-                          background: inputBg,
-                          color: textColor,
-                          outline: "none",
-                        }}
-                        disabled={busy}
-                      />
-                    </div>
+                <button
+                  onClick={doAuth}
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    border: "1px solid #111",
+                    background: "#111",
+                    color: "#fff",
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    cursor: busy ? "not-allowed" : "pointer",
+                    fontWeight: 700,
+                  }}
+                >
+                  {busy ? copy.statusWorking : copy.choose}
+                </button>
 
-                    <div>
-                      <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phoneLabel}</label>
-                      <input
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder={isNo ? "Valgfritt" : "Optional"}
-                        style={{
-                          width: "100%",
-                          padding: "12px 12px",
-                          borderRadius: 12,
-                          border: `1px solid ${borderColor}`,
-                          background: inputBg,
-                          color: textColor,
-                          outline: "none",
-                        }}
-                        disabled={busy}
-                      />
-                    </div>
-                  </div>
+                <div style={{ marginTop: 10, color: "#555", fontSize: 12 }}>
+                  {copy.hint}
                 </div>
-              </div>
-            </>
-          )}
-
-          {/* Plan summary / info */}
-          <div
-            style={{
-              border: `1px solid ${borderColor}`,
-              borderRadius: 14,
-              padding: 12,
-              background: "rgba(255,255,255,0.03)",
-              marginBottom: "1rem",
-            }}
-          >
-            <div style={{ fontWeight: 900, marginBottom: 6 }}>{t.billingTitle}</div>
-            <div style={{ color: mutedColor, fontSize: 13, lineHeight: 1.4 }}>
-              {mode === "trial" ? t.trialInfo : t.buyInfo}
-            </div>
-          </div>
-
-          {/* Billing controls */}
-          {mode === "buy" ? (
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>{t.purchaseTypeLabel}</div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button
-                      type="button"
-                      onClick={() => setPurchaseType("subscription")}
-                      style={{
-                        border: `1px solid ${borderColor}`,
-                        background: purchaseType === "subscription" ? btnBg : btnBg2,
-                        color: textColor,
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        cursor: "pointer",
-                        fontWeight: 800,
-                      }}
-                      disabled={busy}
-                    >
-                      {t.purchaseSub}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPurchaseType("one_time")}
-                      style={{
-                        border: `1px solid ${borderColor}`,
-                        background: purchaseType === "one_time" ? btnBg : btnBg2,
-                        color: textColor,
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        cursor: "pointer",
-                        fontWeight: 800,
-                      }}
-                      disabled={busy}
-                    >
-                      {t.purchaseOneTime}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>{t.billingPeriodLabel}</div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button
-                      type="button"
-                      onClick={() => setBillingPeriod("month")}
-                      style={{
-                        border: `1px solid ${borderColor}`,
-                        background: billingPeriod === "month" ? btnBg : btnBg2,
-                        color: textColor,
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        cursor: "pointer",
-                        fontWeight: 800,
-                      }}
-                      disabled={busy}
-                    >
-                      {currency} {priceMonthExVat} + {Math.round(vatRate * 100)}% MVA
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setBillingPeriod("year")}
-                      style={{
-                        border: `1px solid ${borderColor}`,
-                        background: billingPeriod === "year" ? btnBg : btnBg2,
-                        color: textColor,
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        cursor: "pointer",
-                        fontWeight: 800,
-                      }}
-                      disabled={busy}
-                    >
-                      {currency} {priceYearExVat} + {Math.round(vatRate * 100)}% MVA
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price summary */}
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  borderRadius: 14,
-                  border: `1px solid ${borderColor}`,
-                  background: "rgba(0,0,0,0.18)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-                  <div style={{ fontWeight: 900 }}>{isNo ? "Sum" : "Total"}</div>
-                  <div style={{ fontWeight: 900, fontSize: 18 }}>
-                    {currency} {totalLabel}
-                    {totalSuffix}
-                  </div>
-                </div>
-
-                <div style={{ color: mutedColor, fontSize: 12, marginTop: 6 }}>
-                  {isNo ? "Pris inkl. MVA. Eks. MVA: " : "Price incl. VAT. Ex VAT: "}
-                  {currency} {priceLabel}
-                  {purchaseType === "one_time"
-                    ? isNo
-                      ? " (engangsbetaling)"
-                      : " (one-time)"
-                    : ""}
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Status / Error */}
-          {status ? (
-            <div
-              style={{
-                marginTop: "1rem",
-                border: `1px solid ${borderColor}`,
-                background: "rgba(43, 214, 120, 0.12)",
-                borderRadius: 12,
-                padding: 12,
-                fontWeight: 800,
-              }}
-            >
-              {status}
-            </div>
-          ) : null}
-
-          {error ? (
-            <div
-              style={{
-                marginTop: "1rem",
-                border: `1px solid ${borderColor}`,
-                background: "rgba(255, 120, 120, 0.12)",
-                borderRadius: 12,
-                padding: 12,
-                fontWeight: 800,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {error}
-            </div>
-          ) : null}
-        </div>
-
-               {/* Footer */}
-        <div
-          style={{
-            padding: "0.9rem 1rem 1rem 1rem",
-            borderTop: `1px solid ${borderColor}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ color: mutedColor, fontSize: 12 }}>
-            {mode === "buy"
-              ? isNo
-                ? "Etter betaling: gå tilbake til appen og kjør verify om nødvendig."
-                : "After payment: return to the app and run verify if needed."
-              : isNo
-                ? "Start prøveperioden og fortsett i appen."
-                : "Start the trial and continue in the app."}
-          </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {mode === "trial" ? (
-              <button
-                type="button"
-                onClick={startTrial}
-                style={{
-                  border: `1px solid ${borderColor}`,
-                  background: btnBg,
-                  color: "#fff",
-                  borderRadius: 12,
-                  padding: "10px 14px",
-                  cursor: "pointer",
-                  fontWeight: 900,
-                  opacity: busy ? 0.7 : 1,
-                }}
-                disabled={busy}
-              >
-                {busy ? (isNo ? "Jobber..." : "Working...") : t.buttonTrial}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={goToCheckout}
-                style={{
-                  border: `1px solid ${borderColor}`,
-                  background: btnBg,
-                  color: "#fff",
-                  borderRadius: 12,
-                  padding: "10px 14px",
-                  cursor: "pointer",
-                  fontWeight: 900,
-                  opacity: busy ? 0.7 : 1,
-                }}
-                disabled={busy}
-              >
-                {busy ? (isNo ? "Sender..." : "Sending...") : t.buttonCheckout}
-              </button>
+              </>
             )}
           </div>
+
+          {/* COMPANY INFO */}
+          <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14 }}>
+            <div style={{ fontWeight: 700, marginBottom: 10 }}>{copy.orgTitle}</div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
+                  {copy.orgName} <span style={{ color: "#c00" }}>({copy.required})</span>
+                </label>
+                <input
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    marginTop: 6,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
+                  {copy.orgNr} <span style={{ color: "#c00" }}>({copy.required})</span>
+                </label>
+                <input
+                  value={orgNr}
+                  onChange={(e) => setOrgNr(e.target.value)}
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    marginTop: 6,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
+                  {copy.contactName} <span style={{ color: "#c00" }}>({copy.required})</span>
+                </label>
+                <input
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    marginTop: 6,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
+                  {copy.phone} <span style={{ color: "#c00" }}>({copy.required})</span>
+                </label>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    marginTop: 6,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ height: 14 }} />
+
+            {/* BUY OPTIONS */}
+            {mode === "buy" && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: "#333", marginBottom: 6 }}>{copy.billing}</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => setBillingPeriod("month")}
+                        disabled={busy}
+                        style={{
+                          flex: 1,
+                          border: "1px solid #ddd",
+                          background: billingPeriod === "month" ? "#111" : "#fff",
+                          color: billingPeriod === "month" ? "#fff" : "#111",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          cursor: busy ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {copy.month}
+                      </button>
+                      <button
+                        onClick={() => setBillingPeriod("year")}
+                        disabled={busy}
+                        style={{
+                          flex: 1,
+                          border: "1px solid #ddd",
+                          background: billingPeriod === "year" ? "#111" : "#fff",
+                          color: billingPeriod === "year" ? "#fff" : "#111",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          cursor: busy ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {copy.year}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 12, color: "#333", marginBottom: 6 }}>{copy.purchaseType}</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => setPurchaseType("subscription")}
+                        disabled={busy}
+                        style={{
+                          flex: 1,
+                          border: "1px solid #ddd",
+                          background: purchaseType === "subscription" ? "#111" : "#fff",
+                          color: purchaseType === "subscription" ? "#fff" : "#111",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          cursor: busy ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {copy.subscription}
+                      </button>
+                      <button
+                        onClick={() => setPurchaseType("one_time")}
+                        disabled={busy}
+                        style={{
+                          flex: 1,
+                          border: "1px solid #ddd",
+                          background: purchaseType === "one_time" ? "#111" : "#fff",
+                          color: purchaseType === "one_time" ? "#fff" : "#111",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          cursor: busy ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {copy.oneTime}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ height: 12 }} />
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "end" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, color: "#333" }}>{copy.seats}</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, Math.min(100, Number(e.target.value || 1))))}
+                      disabled={busy}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        border: "1px solid #ddd",
+                        marginTop: 6,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 12, color: "#444" }}>Pris (eks mva): {money(priceExVat, currency)}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#111" }}>
+                      Pris (inkl mva): {money(priceIncVat, currency)}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div style={{ height: 14 }} />
+
+            {/* ACTIONS */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {mode === "trial" ? (
+                <button
+                  onClick={startTrial}
+                  disabled={busy || !canUse || !idToken}
+                  style={{
+                    border: "1px solid #111",
+                    background: "#111",
+                    color: "#fff",
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    cursor: busy || !canUse || !idToken ? "not-allowed" : "pointer",
+                    fontWeight: 800,
+                    flex: "1 1 260px",
+                  }}
+                >
+                  {busy ? copy.statusWorking : copy.startTrial}
+                </button>
+              ) : (
+                <button
+                  onClick={goCheckout}
+                  disabled={busy || !canUse || !idToken}
+                  style={{
+                    border: "1px solid #111",
+                    background: "#111",
+                    color: "#fff",
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    cursor: busy || !canUse || !idToken ? "not-allowed" : "pointer",
+                    fontWeight: 800,
+                    flex: "1 1 260px",
+                  }}
+                >
+                  {busy ? copy.statusWorking : copy.goCheckout}
+                </button>
+              )}
+            </div>
+
+            {!!err && (
+              <div style={{ marginTop: 12, color: "#b00020", fontSize: 13, whiteSpace: "pre-wrap" }}>
+                Feil: {err}
+              </div>
+            )}
+
+            <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+              Status: {busy ? copy.statusWorking : copy.statusReady}
+            </div>
+          </div>
         </div>
+
+        {/* MOBILE: stack columns */}
+        <style>{`
+          @media (max-width: 860px) {
+            .paywall-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
       </div>
     </div>
   );
-};
-
-export default PaywallModal;
-
+}
