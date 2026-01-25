@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useAuthUser } from "../auth/useAuthUser";
 
 type Mode = "trial" | "buy";
 type BillingPeriod = "month" | "year";
@@ -17,713 +18,468 @@ type Props = {
   priceYearExVat: number; // e.g. 1290
   vatRate: number; // e.g. 0.25
 
-  currency: string; // e.g. "NOK"
+  currency: string; // "NOK"
 };
 
-const LS_TOKEN = "ms_idToken";
-const LS_EMAIL = "ms_email";
-
-function money(n: number, currency: string) {
+function fmtMoney(n: number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
+    return new Intl.NumberFormat("nb-NO", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(n);
   } catch {
-    return `${n.toFixed(0)} ${currency}`;
+    return `${n} ${currency}`;
   }
 }
 
-function firebaseEndpoint(path: string, apiKey: string) {
-  return `https://identitytoolkit.googleapis.com/v1/${path}?key=${encodeURIComponent(apiKey)}`;
-}
-
-async function firebaseSignIn(apiKey: string, email: string, password: string) {
-  const r = await fetch(firebaseEndpoint("accounts:signInWithPassword", apiKey), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email, password, returnSecureToken: true }),
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(String(data?.error?.message || "AUTH_FAILED"));
-  return { idToken: String(data.idToken || ""), email: String(data.email || "") };
-}
-
-async function firebaseSignUp(apiKey: string, email: string, password: string) {
-  const r = await fetch(firebaseEndpoint("accounts:signUp", apiKey), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email, password, returnSecureToken: true }),
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(String(data?.error?.message || "AUTH_FAILED"));
-  return { idToken: String(data.idToken || ""), email: String(data.email || "") };
-}
-
-async function workerJson<T>(
-  url: string,
-  opts: { method: "GET" | "POST"; idToken?: string; body?: any }
-): Promise<T> {
-  const r = await fetch(url, {
-    method: opts.method,
-    headers: {
-      "content-type": "application/json",
-      ...(opts.idToken ? { Authorization: `Bearer ${opts.idToken}` } : {}),
-    },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(String((data as any)?.error || `HTTP_${r.status}`));
-  return data as T;
+function isEmail(x: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.trim());
 }
 
 export default function PaywallModal(props: Props) {
-  const {
-    open,
-    mode,
-    onClose,
-    lang,
-    workerBaseUrl,
-    priceMonthExVat,
-    priceYearExVat,
-    vatRate,
-    currency,
-  } = props;
+  const { open, mode, onClose, lang, workerBaseUrl, priceMonthExVat, priceYearExVat, vatRate, currency } = props;
 
   const copy = useMemo(() => {
-    const no = {
-      title: mode === "trial" ? "Start prøveperiode" : "Oppgrader til Pro",
-      intro:
-        "For å opprette konto (og senere oppgradere til Pro) trenger vi firmainfo én gang. Dette knyttes til organisasjonen din.",
-      authTitle: "Logg inn / Opprett konto",
-      email: "E-post",
-      password: "Passord",
-      signIn: "Logg inn",
-      signUp: "Opprett konto",
-      signOut: "Logg ut",
-      orgTitle: "Firmainfo",
-      orgName: "Firmanavn",
-      orgNr: "Org.nr",
-      contactName: "Kontaktperson",
-      phone: "Telefon",
-      required: "Påkrevd",
-      choose: "Velg",
-      billing: "Fakturering",
-      month: "Måned",
-      year: "År",
-      purchaseType: "Kjøpstype",
-      subscription: "Abonnement",
-      oneTime: "Engangsbetaling",
-      seats: "Antall lisenser",
-      startTrial: "Start prøveperiode (10 dager)",
-      goCheckout: "Gå til betaling",
-      close: "Lukk",
-      statusReady: "Klar",
-      statusWorking: "Jobber…",
-      hint:
-        "Du blir sendt til Stripe for betaling. Når Stripe er ferdig, oppdateres Pro automatisk via webhook.",
-      mustLogin: "Du må være logget inn først.",
-      mustFillOrg: "Fyll ut firmainfo først.",
+    const no = lang === "no";
+    return {
+      title: mode === "trial" ? (no ? "Start prøveperiode" : "Start trial") : (no ? "Kjøp Progress" : "Buy Progress"),
+      lead:
+        mode === "trial"
+          ? no
+            ? "Fyll inn firmainfo én gang. Vi oppretter konto + org og aktiverer prøveperioden."
+            : "Fill company info once. We create account + org and start your trial."
+          : no
+          ? "Fyll inn firmainfo én gang. Vi oppretter konto + org og sender deg til Stripe Checkout."
+          : "Fill company info once. We create account + org and send you to Stripe Checkout.",
+      email: no ? "E-post" : "Email",
+      password: no ? "Passord" : "Password",
+      passwordHint: no ? "Minst 6 tegn." : "At least 6 characters.",
+      company: no ? "Firmainfo" : "Company info",
+      orgName: no ? "Firmanavn" : "Company name",
+      orgNr: no ? "Org.nr" : "Org no.",
+      contactName: no ? "Kontaktperson" : "Contact name",
+      phone: no ? "Telefon" : "Phone",
+      plan: no ? "Plan" : "Plan",
+      billing: no ? "Fakturering" : "Billing",
+      purchaseType: no ? "Kjøpstype" : "Purchase type",
+      sub: no ? "Abonnement" : "Subscription",
+      oneTime: no ? "Engangsbetaling" : "One-time",
+      month: no ? "Måned" : "Month",
+      year: no ? "År" : "Year",
+      ctaTrial: no ? "Start prøveperiode" : "Start trial",
+      ctaBuy: no ? "Gå til betaling" : "Go to checkout",
+      cancel: no ? "Avbryt" : "Cancel",
+      errorMissing: no ? "Fyll inn alle feltene." : "Please fill in all fields.",
+      errorEmail: no ? "Ugyldig e-post." : "Invalid email.",
+      errorPassword: no ? "Passord må være minst 6 tegn." : "Password must be at least 6 characters.",
+      working: no ? "Jobber..." : "Working...",
+      pricePerMonth: no ? "per måned" : "per month",
+      pricePerYear: no ? "per år" : "per year",
+      inclVat: no ? "inkl. mva" : "incl. VAT",
+      exclVat: no ? "eks. mva" : "excl. VAT",
     };
-    const en = {
-      title: mode === "trial" ? "Start trial" : "Upgrade to Pro",
-      intro:
-        "To create an account (and later upgrade to Pro) we need your company details once. This will be linked to your organization.",
-      authTitle: "Sign in / Create account",
-      email: "Email",
-      password: "Password",
-      signIn: "Sign in",
-      signUp: "Create account",
-      signOut: "Sign out",
-      orgTitle: "Company details",
-      orgName: "Company name",
-      orgNr: "Org. number",
-      contactName: "Contact person",
-      phone: "Phone",
-      required: "Required",
-      choose: "Choose",
-      billing: "Billing",
-      month: "Monthly",
-      year: "Yearly",
-      purchaseType: "Purchase type",
-      subscription: "Subscription",
-      oneTime: "One-time payment",
-      seats: "Number of seats",
-      startTrial: "Start trial (10 days)",
-      goCheckout: "Proceed to checkout",
-      close: "Close",
-      statusReady: "Ready",
-      statusWorking: "Working…",
-      hint:
-        "You will be redirected to Stripe. When Stripe completes, Pro is updated automatically via webhook.",
-      mustLogin: "You must be signed in first.",
-      mustFillOrg: "Please fill in company details first.",
-    };
-    return lang === "en" ? en : no;
   }, [lang, mode]);
 
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { user, signIn, register } = useAuthUser();
 
-  const [idToken, setIdToken] = useState<string>("");
-  const [userEmail, setUserEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>(user?.email || "");
+  const [password, setPassword] = useState<string>("");
 
-  const [orgName, setOrgName] = useState("");
-  const [orgNr, setOrgNr] = useState("");
-  const [contactName, setContactName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [orgName, setOrgName] = useState<string>("");
+  const [orgNr, setOrgNr] = useState<string>("");
+  const [contactName, setContactName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("month");
   const [purchaseType, setPurchaseType] = useState<PurchaseType>("subscription");
-  const [quantity, setQuantity] = useState<number>(1);
 
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string>("");
-
-  const apiKey = (import.meta as any).env?.VITE_FIREBASE_API_KEY as string | undefined;
-
-  useEffect(() => {
-    if (!open) return;
-    setErr("");
-
-    const t = localStorage.getItem(LS_TOKEN) || "";
-    const e = localStorage.getItem(LS_EMAIL) || "";
-    if (t) setIdToken(t);
-    if (e) setUserEmail(e);
-
-    if (e && !email) setEmail(e);
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!open) return null;
+  const [error, setError] = useState<string>("");
 
   const priceExVat = billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
-  const priceIncVat = Math.round(priceExVat * (1 + vatRate));
+  const priceInclVat = Math.round(priceExVat * (1 + vatRate));
 
-  const canUse =
-    Boolean(idToken) &&
-    Boolean(orgName.trim()) &&
-    Boolean(orgNr.trim()) &&
-    Boolean(contactName.trim()) &&
-    Boolean(phone.trim());
-
-  async function doAuth() {
-    setErr("");
-    if (!apiKey) {
-      setErr("MISSING_VITE_FIREBASE_API_KEY");
-      return;
-    }
-    const e = email.trim();
-    const p = password;
-    if (!e || !p) {
-      setErr("MISSING_EMAIL_OR_PASSWORD");
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const res =
-        authMode === "signin"
-          ? await firebaseSignIn(apiKey, e, p)
-          : await firebaseSignUp(apiKey, e, p);
-
-      if (!res.idToken) throw new Error("NO_ID_TOKEN");
-      setIdToken(res.idToken);
-      setUserEmail(res.email || e);
-
-      localStorage.setItem(LS_TOKEN, res.idToken);
-      localStorage.setItem(LS_EMAIL, (res.email || e).toLowerCase());
-    } catch (e: any) {
-      setErr(e?.message || String(e));
-    } finally {
-      setBusy(false);
-    }
+  function resetUi() {
+    setError("");
+    setBusy(false);
   }
 
-  function doSignOut() {
-    setIdToken("");
-    setUserEmail("");
-    localStorage.removeItem(LS_TOKEN);
-    localStorage.removeItem(LS_EMAIL);
+  async function ensureSignedInAndGetToken(): Promise<string> {
+    // If already logged in, just grab token
+    if (user) {
+      return await user.getIdToken(true);
+    }
+
+    // Not logged in → we must create/sign-in here (single-flow).
+    const e = email.trim().toLowerCase();
+
+    // Try register first. If it already exists, sign in.
+    try {
+      await register(e, password);
+    } catch (err: any) {
+      const msg = String(err?.message || "");
+      const code = String(err?.code || "");
+      const already = code.includes("email-already-in-use") || msg.toLowerCase().includes("email-already-in-use");
+      if (!already) throw err;
+      await signIn(e, password);
+    }
+
+    // Now we should have a user
+    // useAuthUser updates state; but we can also read from auth directly via hook state next tick.
+    // safest: call signIn/register returns and then re-use email+password to signIn if needed.
+    // Here we just ask the freshly-authenticated user for token via window.firebaseAuth is not available,
+    // so we rely on the hook user updating quickly. If it doesn't, we fall back by re-signing in.
+    const u = (await signIn(email.trim().toLowerCase(), password)).user;
+    return await u.getIdToken(true);
   }
 
   async function startTrial() {
-    setErr("");
-    if (!idToken) return setErr(copy.mustLogin);
-    if (!canUse) return setErr(copy.mustFillOrg);
-
+    setError("");
     setBusy(true);
     try {
-      await workerJson(`${workerBaseUrl}/api/trial/start`, {
+      // Validate
+      const e = email.trim().toLowerCase();
+      if (!orgName.trim() || !orgNr.trim() || !contactName.trim() || !phone.trim() || !e) {
+        setError(copy.errorMissing);
+        setBusy(false);
+        return;
+      }
+      if (!isEmail(e)) {
+        setError(copy.errorEmail);
+        setBusy(false);
+        return;
+      }
+      if (!user && password.trim().length < 6) {
+        setError(copy.errorPassword);
+        setBusy(false);
+        return;
+      }
+
+      const idToken = await ensureSignedInAndGetToken();
+
+      const r = await fetch(`${workerBaseUrl.replace(/\/$/, "")}/api/trial/start`, {
         method: "POST",
-        idToken,
-        body: {
-          product: "progress",
-          orgName: orgName.trim(),
-          orgNr: orgNr.replace(/\s+/g, "").trim(),
-          contactName: contactName.trim(),
-          phone: phone.trim(),
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
+        body: JSON.stringify({
+          product: "progress",
+          orgName,
+          orgNr,
+          contactName,
+          phone,
+        }),
       });
 
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(String(data?.error || `HTTP_${r.status}`));
+
+      // Done
       onClose();
-    } catch (e: any) {
-      setErr(e?.message || String(e));
-    } finally {
+      resetUi();
+    } catch (err: any) {
+      setError(String(err?.message || err));
       setBusy(false);
     }
   }
 
-  async function goCheckout() {
-    setErr("");
-    if (!idToken) return setErr(copy.mustLogin);
-    if (!canUse) return setErr(copy.mustFillOrg);
-
-    const origin = window.location.origin;
-    const successUrl = `${origin}/#/pricing?checkout=success`;
-    const cancelUrl = `${origin}/#/pricing?checkout=cancel`;
-
+  async function goToCheckout() {
+    setError("");
     setBusy(true);
     try {
-      const res = await workerJson<{ url: string }>(`${workerBaseUrl}/api/checkout/create`, {
+      // Validate
+      const e = email.trim().toLowerCase();
+      if (!orgName.trim() || !orgNr.trim() || !contactName.trim() || !phone.trim() || !e) {
+        setError(copy.errorMissing);
+        setBusy(false);
+        return;
+      }
+      if (!isEmail(e)) {
+        setError(copy.errorEmail);
+        setBusy(false);
+        return;
+      }
+      if (!user && password.trim().length < 6) {
+        setError(copy.errorPassword);
+        setBusy(false);
+        return;
+      }
+
+      const idToken = await ensureSignedInAndGetToken();
+
+      const origin = window.location.origin;
+      const successUrl = `${origin}/progress?checkout=success`;
+      const cancelUrl = `${origin}/progress?checkout=cancel`;
+
+      const r = await fetch(`${workerBaseUrl.replace(/\/$/, "")}/api/checkout/create`, {
         method: "POST",
-        idToken,
-        body: {
-          email: (userEmail || email).trim(),
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          email: e,
           lang,
-          billingPeriod,
+          orgName,
+          orgNr,
+          contactName,
+          phone,
+
           purchaseType,
-          quantity,
+          billingPeriod,
           tier: "intro",
 
-          orgName: orgName.trim(),
-          orgNr: orgNr.replace(/\s+/g, "").trim(),
-          contactName: contactName.trim(),
-          phone: phone.trim(),
+          quantity: 1,
 
           successUrl,
           cancelUrl,
-        },
+        }),
       });
 
-      if (!res?.url) throw new Error("NO_CHECKOUT_URL");
-      window.location.href = res.url;
-    } catch (e: any) {
-      setErr(e?.message || String(e));
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(String(data?.error || `HTTP_${r.status}`));
+      if (!data?.url) throw new Error("NO_CHECKOUT_URL");
+
+      window.location.href = String(data.url);
+    } catch (err: any) {
+      setError(String(err?.message || err));
       setBusy(false);
     }
   }
 
+  if (!open) return null;
+
+  // --- Styling: keep it MCL-ish (simple, clean, same vars, no “new design system”) ---
+  const overlay: React.CSSProperties = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    background: "rgba(0,0,0,0.55)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  };
+
+  const card: React.CSSProperties = {
+    width: "min(720px, 100%)",
+    borderRadius: 16,
+    background: "var(--mcl-surface, #fff)",
+    color: "var(--mcl-text, #111)",
+    border: "1px solid var(--mcl-border, rgba(0,0,0,0.12))",
+    boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
+    overflow: "hidden",
+  };
+
+  const header: React.CSSProperties = {
+    padding: "18px 18px 12px 18px",
+    borderBottom: "1px solid var(--mcl-border, rgba(0,0,0,0.12))",
+    background: "linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0))",
+  };
+
+  const body: React.CSSProperties = { padding: 18 };
+
+  const grid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+  };
+
+  const row: React.CSSProperties = { display: "grid", gap: 6 };
+
+  const label: React.CSSProperties = {
+    fontSize: 12,
+    opacity: 0.85,
+    fontWeight: 600,
+  };
+
+  const input: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid var(--mcl-border, rgba(0,0,0,0.18))",
+    background: "var(--mcl-bg, #fff)",
+    color: "var(--mcl-text, #111)",
+    outline: "none",
+  };
+
+  const select: React.CSSProperties = { ...input };
+
+  const footer: React.CSSProperties = {
+    padding: 18,
+    borderTop: "1px solid var(--mcl-border, rgba(0,0,0,0.12))",
+    display: "flex",
+    gap: 10,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    background: "linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.02))",
+  };
+
+  const btnBase: React.CSSProperties = {
+    padding: "10px 14px",
+    borderRadius: 12,
+    border: "1px solid var(--mcl-border, rgba(0,0,0,0.18))",
+    cursor: busy ? "not-allowed" : "pointer",
+    fontWeight: 700,
+  };
+
+  const btnGhost: React.CSSProperties = {
+    ...btnBase,
+    background: "transparent",
+    color: "var(--mcl-text, #111)",
+  };
+
+  const btnPrimary: React.CSSProperties = {
+    ...btnBase,
+    background: "var(--mcl-primary, #111)",
+    color: "var(--mcl-primaryText, #fff)",
+    border: "1px solid rgba(0,0,0,0.18)",
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-        zIndex: 9999,
-      }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        style={{
-          width: "min(920px, 100%)",
-          background: "#fff",
-          borderRadius: 16,
-          padding: 18,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-          <div>
-            <h2 style={{ margin: 0 }}>{copy.title}</h2>
-            <p style={{ margin: "8px 0 0 0", color: "#333", maxWidth: 760 }}>{copy.intro}</p>
+    <div style={overlay} role="dialog" aria-modal="true" aria-label={copy.title}>
+      <div style={card}>
+        <div style={header}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.2 }}>{copy.title}</div>
+              <div style={{ marginTop: 6, opacity: 0.85, lineHeight: 1.35 }}>{copy.lead}</div>
+            </div>
+
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 13, fontWeight: 800 }}>
+                {fmtMoney(priceExVat, currency)} {copy.exclVat}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.75 }}>
+                {fmtMoney(priceInclVat, currency)} {copy.inclVat}{" "}
+                {billingPeriod === "month" ? copy.pricePerMonth : copy.pricePerYear}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={body}>
+          {/* Account fields (single-flow) */}
+          <div style={{ ...grid, marginBottom: 14 }}>
+            <div style={row}>
+              <div style={label}>{copy.email}</div>
+              <input
+                style={input}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                disabled={busy}
+              />
+            </div>
+
+            {/* Password only needed if not already logged in */}
+            <div style={row}>
+              <div style={label}>{copy.password}</div>
+              <input
+                style={input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={copy.passwordHint}
+                type="password"
+                disabled={busy || !!user}
+              />
+            </div>
           </div>
 
-          <button
-            onClick={onClose}
-            style={{
-              border: "1px solid #ddd",
-              background: "#fafafa",
-              borderRadius: 10,
-              padding: "8px 12px",
-              cursor: "pointer",
-              height: 40,
-            }}
-          >
-            {copy.close}
+          {/* Company */}
+          <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8 }}>{copy.company}</div>
+          <div style={grid}>
+            <div style={row}>
+              <div style={label}>{copy.orgName}</div>
+              <input style={input} value={orgName} onChange={(e) => setOrgName(e.target.value)} disabled={busy} />
+            </div>
+            <div style={row}>
+              <div style={label}>{copy.orgNr}</div>
+              <input style={input} value={orgNr} onChange={(e) => setOrgNr(e.target.value)} disabled={busy} />
+            </div>
+            <div style={row}>
+              <div style={label}>{copy.contactName}</div>
+              <input
+                style={input}
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                disabled={busy}
+              />
+            </div>
+            <div style={row}>
+              <div style={label}>{copy.phone}</div>
+              <input style={input} value={phone} onChange={(e) => setPhone(e.target.value)} disabled={busy} />
+            </div>
+          </div>
+
+          {/* Buy config */}
+          {mode === "buy" && (
+            <div style={{ marginTop: 16 }}>
+              <div style={grid}>
+                <div style={row}>
+                  <div style={label}>{copy.purchaseType}</div>
+                  <select
+                    style={select}
+                    value={purchaseType}
+                    onChange={(e) => setPurchaseType(e.target.value as PurchaseType)}
+                    disabled={busy}
+                  >
+                    <option value="subscription">{copy.sub}</option>
+                    <option value="one_time">{copy.oneTime}</option>
+                  </select>
+                </div>
+
+                <div style={row}>
+                  <div style={label}>{copy.billing}</div>
+                  <select
+                    style={select}
+                    value={billingPeriod}
+                    onChange={(e) => setBillingPeriod(e.target.value as BillingPeriod)}
+                    disabled={busy}
+                  >
+                    <option value="month">{copy.month}</option>
+                    <option value="year">{copy.year}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error ? (
+            <div
+              style={{
+                marginTop: 14,
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid rgba(220, 38, 38, 0.35)",
+                background: "rgba(220, 38, 38, 0.08)",
+                color: "rgb(153, 27, 27)",
+                fontWeight: 650,
+                fontSize: 13,
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
+        </div>
+
+        <div style={footer}>
+          <button style={btnGhost} onClick={onClose} disabled={busy}>
+            {copy.cancel}
           </button>
+
+          {mode === "trial" ? (
+            <button style={btnPrimary} onClick={startTrial} disabled={busy}>
+              {busy ? copy.working : copy.ctaTrial}
+            </button>
+          ) : (
+            <button style={btnPrimary} onClick={goToCheckout} disabled={busy}>
+              {busy ? copy.working : copy.ctaBuy}
+            </button>
+          )}
         </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
-          {/* AUTH */}
-          <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14 }}>
-            <div style={{ fontWeight: 700, marginBottom: 10 }}>{copy.authTitle}</div>
-
-            {idToken ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ color: "#111" }}>
-                  ✅ {userEmail || email}
-                </div>
-                <button
-                  onClick={doSignOut}
-                  disabled={busy}
-                  style={{
-                    border: "1px solid #ddd",
-                    background: "#fff",
-                    borderRadius: 10,
-                    padding: "10px 12px",
-                    cursor: busy ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {copy.signOut}
-                </button>
-              </div>
-            ) : (
-              <>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                  <button
-                    onClick={() => setAuthMode("signin")}
-                    disabled={busy}
-                    style={{
-                      flex: 1,
-                      border: "1px solid #ddd",
-                      background: authMode === "signin" ? "#111" : "#fff",
-                      color: authMode === "signin" ? "#fff" : "#111",
-                      borderRadius: 10,
-                      padding: "10px 12px",
-                      cursor: busy ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {copy.signIn}
-                  </button>
-                  <button
-                    onClick={() => setAuthMode("signup")}
-                    disabled={busy}
-                    style={{
-                      flex: 1,
-                      border: "1px solid #ddd",
-                      background: authMode === "signup" ? "#111" : "#fff",
-                      color: authMode === "signup" ? "#fff" : "#111",
-                      borderRadius: 10,
-                      padding: "10px 12px",
-                      cursor: busy ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {copy.signUp}
-                  </button>
-                </div>
-
-                <label style={{ display: "block", fontSize: 12, color: "#333" }}>{copy.email}</label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                    marginTop: 6,
-                  }}
-                  type="email"
-                  autoComplete="email"
-                />
-
-                <div style={{ height: 10 }} />
-
-                <label style={{ display: "block", fontSize: 12, color: "#333" }}>{copy.password}</label>
-                <input
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                    marginTop: 6,
-                  }}
-                  type="password"
-                  autoComplete={authMode === "signin" ? "current-password" : "new-password"}
-                />
-
-                <div style={{ height: 12 }} />
-
-                <button
-                  onClick={doAuth}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    border: "1px solid #111",
-                    background: "#111",
-                    color: "#fff",
-                    borderRadius: 12,
-                    padding: "12px 14px",
-                    cursor: busy ? "not-allowed" : "pointer",
-                    fontWeight: 700,
-                  }}
-                >
-                  {busy ? copy.statusWorking : copy.choose}
-                </button>
-
-                <div style={{ marginTop: 10, color: "#555", fontSize: 12 }}>
-                  {copy.hint}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* COMPANY INFO */}
-          <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14 }}>
-            <div style={{ fontWeight: 700, marginBottom: 10 }}>{copy.orgTitle}</div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
-                  {copy.orgName} <span style={{ color: "#c00" }}>({copy.required})</span>
-                </label>
-                <input
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                    marginTop: 6,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
-                  {copy.orgNr} <span style={{ color: "#c00" }}>({copy.required})</span>
-                </label>
-                <input
-                  value={orgNr}
-                  onChange={(e) => setOrgNr(e.target.value)}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                    marginTop: 6,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
-                  {copy.contactName} <span style={{ color: "#c00" }}>({copy.required})</span>
-                </label>
-                <input
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                    marginTop: 6,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 12, color: "#333" }}>
-                  {copy.phone} <span style={{ color: "#c00" }}>({copy.required})</span>
-                </label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={busy}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #ddd",
-                    marginTop: 6,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ height: 14 }} />
-
-            {/* BUY OPTIONS */}
-            {mode === "buy" && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 12, color: "#333", marginBottom: 6 }}>{copy.billing}</div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => setBillingPeriod("month")}
-                        disabled={busy}
-                        style={{
-                          flex: 1,
-                          border: "1px solid #ddd",
-                          background: billingPeriod === "month" ? "#111" : "#fff",
-                          color: billingPeriod === "month" ? "#fff" : "#111",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          cursor: busy ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {copy.month}
-                      </button>
-                      <button
-                        onClick={() => setBillingPeriod("year")}
-                        disabled={busy}
-                        style={{
-                          flex: 1,
-                          border: "1px solid #ddd",
-                          background: billingPeriod === "year" ? "#111" : "#fff",
-                          color: billingPeriod === "year" ? "#fff" : "#111",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          cursor: busy ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {copy.year}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: 12, color: "#333", marginBottom: 6 }}>{copy.purchaseType}</div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => setPurchaseType("subscription")}
-                        disabled={busy}
-                        style={{
-                          flex: 1,
-                          border: "1px solid #ddd",
-                          background: purchaseType === "subscription" ? "#111" : "#fff",
-                          color: purchaseType === "subscription" ? "#fff" : "#111",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          cursor: busy ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {copy.subscription}
-                      </button>
-                      <button
-                        onClick={() => setPurchaseType("one_time")}
-                        disabled={busy}
-                        style={{
-                          flex: 1,
-                          border: "1px solid #ddd",
-                          background: purchaseType === "one_time" ? "#111" : "#fff",
-                          color: purchaseType === "one_time" ? "#fff" : "#111",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                          cursor: busy ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {copy.oneTime}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ height: 12 }} />
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "end" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 12, color: "#333" }}>{copy.seats}</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, Math.min(100, Number(e.target.value || 1))))}
-                      disabled={busy}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        border: "1px solid #ddd",
-                        marginTop: 6,
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 12, color: "#444" }}>Pris (eks mva): {money(priceExVat, currency)}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#111" }}>
-                      Pris (inkl mva): {money(priceIncVat, currency)}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div style={{ height: 14 }} />
-
-            {/* ACTIONS */}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {mode === "trial" ? (
-                <button
-                  onClick={startTrial}
-                  disabled={busy || !canUse || !idToken}
-                  style={{
-                    border: "1px solid #111",
-                    background: "#111",
-                    color: "#fff",
-                    borderRadius: 12,
-                    padding: "12px 14px",
-                    cursor: busy || !canUse || !idToken ? "not-allowed" : "pointer",
-                    fontWeight: 800,
-                    flex: "1 1 260px",
-                  }}
-                >
-                  {busy ? copy.statusWorking : copy.startTrial}
-                </button>
-              ) : (
-                <button
-                  onClick={goCheckout}
-                  disabled={busy || !canUse || !idToken}
-                  style={{
-                    border: "1px solid #111",
-                    background: "#111",
-                    color: "#fff",
-                    borderRadius: 12,
-                    padding: "12px 14px",
-                    cursor: busy || !canUse || !idToken ? "not-allowed" : "pointer",
-                    fontWeight: 800,
-                    flex: "1 1 260px",
-                  }}
-                >
-                  {busy ? copy.statusWorking : copy.goCheckout}
-                </button>
-              )}
-            </div>
-
-            {!!err && (
-              <div style={{ marginTop: 12, color: "#b00020", fontSize: 13, whiteSpace: "pre-wrap" }}>
-                Feil: {err}
-              </div>
-            )}
-
-            <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-              Status: {busy ? copy.statusWorking : copy.statusReady}
-            </div>
-          </div>
-        </div>
-
-        {/* MOBILE: stack columns */}
-        <style>{`
-          @media (max-width: 860px) {
-            .paywall-grid { grid-template-columns: 1fr !important; }
-          }
-        `}</style>
       </div>
     </div>
   );
