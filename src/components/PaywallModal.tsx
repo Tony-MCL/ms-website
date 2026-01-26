@@ -1,7 +1,7 @@
 // src/components/PaywallModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "../firebase/firebase";
 
 type Mode = "trial" | "buy";
 type BillingPeriod = "month" | "year";
