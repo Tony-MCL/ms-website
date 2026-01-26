@@ -1,4 +1,3 @@
-// src/components/PaywallModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
@@ -45,21 +44,14 @@ function formatKr(n: number, lang: string) {
   return isNo ? `${r} kr` : `${r} NOK`;
 }
 
-async function ensureFirebaseUser(email: string, password: string) {
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    const token = await cred.user.getIdToken(true);
-    return token;
-  } catch (e: any) {
-    // Hvis bruker finnes fra før → prøv login
-    const code = String(e?.code || "");
-    if (code === "auth/email-already-in-use") {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      const token = await cred.user.getIdToken(true);
-      return token;
-    }
-    throw e;
-  }
+function normalizeOrgNr(s: string) {
+  return (s || "").replace(/\s+/g, "").trim();
+}
+
+function isProbablyOrgNr(s: string) {
+  const x = normalizeOrgNr(s);
+  // veldig enkel sjekk (9 siffer) – ikke “hard” validering
+  return !x || /^\d{9}$/.test(x);
 }
 
 const PaywallModal: React.FC<Props> = ({
@@ -76,7 +68,7 @@ const PaywallModal: React.FC<Props> = ({
   const isNo = lang === "no";
 
   // ============================
-  // ROUTES (Worker)
+  // JUSTER ROUTES HER VED BEHOV
   // ============================
   const ROUTE_TRIAL_START = "/api/trial/start";
   const ROUTE_CHECKOUT_CREATE = "/api/checkout/create";
@@ -84,17 +76,17 @@ const PaywallModal: React.FC<Props> = ({
 
   const base = useMemo(() => clampUrlBase(workerBaseUrl), [workerBaseUrl]);
 
-  // Account
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
 
-  // Company info
+  const [password, setPassword] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  // Firmainfo (kun påkrevd ved kjøp)
   const [orgName, setOrgName] = useState("");
   const [orgNr, setOrgNr] = useState("");
   const [contactName, setContactName] = useState("");
   const [phone, setPhone] = useState("");
-
-  const [touched, setTouched] = useState(false);
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("month");
   const [purchaseType, setPurchaseType] = useState<PurchaseType>("subscription");
@@ -111,7 +103,9 @@ const PaywallModal: React.FC<Props> = ({
     setIsDark(getIsDarkTheme());
 
     const el = document.documentElement;
-    const obs = new MutationObserver(() => setIsDark(getIsDarkTheme()));
+    const obs = new MutationObserver(() => {
+      setIsDark(getIsDarkTheme());
+    });
     obs.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
 
     return () => obs.disconnect();
@@ -124,7 +118,18 @@ const PaywallModal: React.FC<Props> = ({
     setStatus(null);
     setError(null);
     setBusy(false);
-    setTouched(false);
+
+    setEmailTouched(false);
+    setPasswordTouched(false);
+
+    // Ikke nullstill epost/passord automatisk (kan være irriterende),
+    // men vi nullstiller firmainfo i trial-modus for ryddighet.
+    if (mode === "trial") {
+      setOrgName("");
+      setOrgNr("");
+      setContactName("");
+      setPhone("");
+    }
 
     if (mode === "buy") {
       setBillingPeriod("month");
@@ -148,25 +153,31 @@ const PaywallModal: React.FC<Props> = ({
     close: isNo ? "Lukk" : "Close",
 
     emailLabel: isNo ? "E-postadresse" : "Email address",
+    emailHelp: isNo
+      ? "Brukes til å opprette konto og knytte lisens/trial til bruker."
+      : "Used to create an account and connect license/trial to the user.",
+
     passwordLabel: isNo ? "Passord" : "Password",
+    passwordHelp: isNo
+      ? "Brukes til å opprette/logge inn brukeren før trial/kjøp."
+      : "Used to create/sign in the user before trial/purchase.",
 
-    orgNameLabel: isNo ? "Firmanavn" : "Company name",
-    orgNrLabel: isNo ? "Org.nr" : "Org. number",
-    contactNameLabel: isNo ? "Kontaktperson" : "Contact name",
-    phoneLabel: isNo ? "Telefon" : "Phone",
-
-    requiredHint: isNo ? "Alle felt må fylles ut." : "All fields are required.",
+    orgTitle: isNo ? "Firmainfo" : "Company info",
+    orgName: isNo ? "Firmanavn" : "Company name",
+    orgNr: isNo ? "Org.nr" : "Org number",
+    contactName: isNo ? "Kontaktperson" : "Contact person",
+    phone: isNo ? "Telefon" : "Phone",
 
     trialTitle: isNo ? "Prøv Pro gratis i 10 dager" : "Try Pro free for 10 days",
     trialBody: isNo
-      ? "Fyll inn firmaopplysninger én gang. Når du starter trial opprettes konto + org automatisk."
-      : "Fill in company details once. Starting trial will automatically create your account + org.",
+      ? "Full Pro-funksjonalitet i 10 dager. Skriv inn e-post og passord for å starte."
+      : "Full Pro functionality for 10 days. Enter email and password to start.",
     startTrial: isNo ? "Start 10-dagers trial" : "Start 10-day trial",
 
     buyTitle: isNo ? "Kjøp Pro-lisens" : "Buy Pro license",
     buyBody: isNo
-      ? "Fyll inn firmaopplysninger én gang. Når du trykker Kjøp opprettes konto + org, og du sendes til checkout."
-      : "Fill in company details once. Clicking Buy creates your account + org and redirects to checkout.",
+      ? "Fyll inn firmainfo én gang, velg betalingsperiode og kjøpstype, og gå til betaling."
+      : "Fill in company info once, choose billing period and purchase type, and proceed to checkout.",
 
     periodLabel: isNo ? "Betalingsperiode" : "Billing period",
     month: isNo ? "Månedlig" : "Monthly",
@@ -183,38 +194,70 @@ const PaywallModal: React.FC<Props> = ({
     perMonth: isNo ? "kr/mnd" : "NOK/mo",
     perYear: isNo ? "kr/år" : "NOK/yr",
 
-    goToCheckout: isNo ? "Kjøp og gå til betaling" : "Buy and go to checkout",
+    goToCheckout: isNo ? "Gå til betaling" : "Go to checkout",
 
     invalidEmail: isNo ? "Skriv inn en gyldig e-postadresse." : "Enter a valid email address.",
-    passwordTooShort: isNo ? "Passord må være minst 6 tegn." : "Password must be at least 6 characters.",
+    invalidPassword: isNo ? "Passord må være minst 6 tegn." : "Password must be at least 6 characters.",
+    missingCompany: isNo ? "Fyll inn alle feltene i Firmainfo." : "Fill in all fields in Company info.",
+    invalidOrgNr: isNo ? "Org.nr ser ikke riktig ut (9 siffer)." : "Org number looks wrong (9 digits).",
     networkError: isNo
       ? "Noe gikk galt. Sjekk at Worker-endepunktene er riktige."
       : "Something went wrong. Check that the Worker endpoints are correct.",
   };
 
   const emailOk = isValidEmail(email);
-  const passwordOk = (password || "").trim().length >= 6;
+  const passwordOk = password.trim().length >= 6;
 
-  const orgNameOk = orgName.trim().length > 0;
-  const orgNrOk = orgNr.replace(/\s+/g, "").trim().length > 0;
-  const contactNameOk = contactName.trim().length > 0;
-  const phoneOk = phone.trim().length > 0;
+  const showEmailError = emailTouched && !emailOk;
+  const showPasswordError = passwordTouched && !passwordOk;
 
-  const allOk = emailOk && passwordOk && orgNameOk && orgNrOk && contactNameOk && phoneOk;
+  const companyRequired = mode === "buy";
+  const orgNrOk = isProbablyOrgNr(orgNr);
+
+  const companyOk = !companyRequired
+    ? true
+    : Boolean(orgName.trim() && normalizeOrgNr(orgNr) && contactName.trim() && phone.trim() && orgNrOk);
+
+  const showCompanyError = companyRequired && !companyOk;
 
   const selectedExVat = billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
   const vatAmount = selectedExVat * vatRate;
   const selectedInclVat = selectedExVat + vatAmount;
 
+  const title = mode === "trial" ? t.trialTitle : t.buyTitle;
+  const sub = mode === "trial" ? t.trialBody : t.buyBody;
+
+  async function ensureAuthAndGetIdToken() {
+    const e = email.trim();
+    const p = password;
+
+    // 1) prøv å opprette bruker
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, e, p);
+      return await cred.user.getIdToken(true);
+    } catch (err: any) {
+      const code = String(err?.code || "");
+      // 2) hvis bruker finnes, logg inn
+      if (code.includes("email-already-in-use")) {
+        const cred = await signInWithEmailAndPassword(auth, e, p);
+        return await cred.user.getIdToken(true);
+      }
+      throw err;
+    }
+  }
+
   async function startTrial() {
-    setTouched(true);
+    setEmailTouched(true);
+    setPasswordTouched(true);
     setStatus(null);
     setError(null);
-    if (!allOk) return;
+
+    if (!emailOk) return;
+    if (!passwordOk) return;
 
     setBusy(true);
     try {
-      const idToken = await ensureFirebaseUser(email.trim(), password.trim());
+      const idToken = await ensureAuthAndGetIdToken();
 
       const res = await fetch(`${base}${ROUTE_TRIAL_START}`, {
         method: "POST",
@@ -224,13 +267,12 @@ const PaywallModal: React.FC<Props> = ({
         },
         body: JSON.stringify({
           product: "progress",
+          // Trial: firmainfo er valgfritt (ikke påkrevd)
+          orgName: orgName.trim() || undefined,
+          orgNr: normalizeOrgNr(orgNr) || undefined,
+          contactName: contactName.trim() || undefined,
+          phone: phone.trim() || undefined,
           lang,
-          email: email.trim(),
-
-          orgName: orgName.trim(),
-          orgNr: orgNr.replace(/\s+/g, "").trim(),
-          contactName: contactName.trim(),
-          phone: phone.trim(),
         }),
       });
 
@@ -239,16 +281,11 @@ const PaywallModal: React.FC<Props> = ({
         throw new Error(txt || `HTTP ${res.status}`);
       }
 
-      let msg = isNo
-        ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
-        : "Trial started. You can now use Pro features for 10 days.";
-      try {
-        const data = await res.json();
-        if (data?.message) msg = String(data.message);
-      } catch {
-        // ignore
-      }
-      setStatus(msg);
+      setStatus(
+        isNo
+          ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
+          : "Trial started. You can now use Pro features for 10 days."
+      );
     } catch (e: any) {
       setError(e?.message || t.networkError);
     } finally {
@@ -257,14 +294,24 @@ const PaywallModal: React.FC<Props> = ({
   }
 
   async function goToCheckout() {
-    setTouched(true);
+    setEmailTouched(true);
+    setPasswordTouched(true);
     setStatus(null);
     setError(null);
-    if (!allOk) return;
+
+    if (!emailOk) return;
+    if (!passwordOk) return;
+
+    if (!companyOk) {
+      // “buy” krever firmainfo
+      if (!orgNrOk) setError(t.invalidOrgNr);
+      else setError(t.missingCompany);
+      return;
+    }
 
     setBusy(true);
     try {
-      const idToken = await ensureFirebaseUser(email.trim(), password.trim());
+      const idToken = await ensureAuthAndGetIdToken();
 
       const successUrl = window.location.origin + "/progress/app";
       const cancelUrl = window.location.href;
@@ -276,27 +323,22 @@ const PaywallModal: React.FC<Props> = ({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          product: "progress",
           email: email.trim(),
           lang,
-
-          // pricing
           billingPeriod,
           purchaseType,
-
-          // redirect
           successUrl,
           cancelUrl,
 
-          // company info
+          // Firmainfo (påkrevd ved kjøp)
           orgName: orgName.trim(),
-          orgNr: orgNr.replace(/\s+/g, "").trim(),
+          orgNr: normalizeOrgNr(orgNr),
           contactName: contactName.trim(),
           phone: phone.trim(),
 
-          // optional
-          tier: "intro",
+          // valgfritt (du kan fjerne hvis du vil)
           quantity: 1,
+          tier: "intro",
         }),
       });
 
@@ -320,7 +362,7 @@ const PaywallModal: React.FC<Props> = ({
     }
   }
 
-  // Theme-driven styling (MCL)
+  // Theme-driven styling
   const overlayBg = isDark ? "rgba(0,0,0,0.86)" : "rgba(0,0,0,0.45)";
   const overlayBlur = isDark ? "blur(10px)" : "blur(6px)";
 
@@ -332,21 +374,6 @@ const PaywallModal: React.FC<Props> = ({
 
   const inputBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
   const chipBorder = isDark ? "1px solid rgba(255,255,255,0.20)" : "1px solid rgba(0,0,0,0.16)";
-
-  const title = mode === "trial" ? t.trialTitle : t.buyTitle;
-  const sub = mode === "trial" ? t.trialBody : t.buyBody;
-
-  function inputStyle(showBad: boolean) {
-    return {
-      width: "100%",
-      padding: "0.7rem 0.8rem",
-      borderRadius: 12,
-      border: showBad ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
-      background: inputBg,
-      color: "inherit",
-      outline: "none",
-    } as React.CSSProperties;
-  }
 
   return (
     <div
@@ -385,7 +412,7 @@ const PaywallModal: React.FC<Props> = ({
           color: "var(--mcl-text)",
         }}
       >
-        {/* Top bar: Title + close */}
+        {/* Top bar */}
         <div
           style={{
             display: "flex",
@@ -421,65 +448,135 @@ const PaywallModal: React.FC<Props> = ({
 
         {/* Body */}
         <div style={{ padding: "1rem", overflow: "auto" }}>
-          {/* Account */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-            <div>
-              <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.emailLabel}</label>
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => setTouched(true)}
-                placeholder={isNo ? "navn@firma.no" : "name@company.com"}
-                style={inputStyle(touched && !emailOk)}
-              />
-              {touched && !emailOk && <div style={{ fontSize: 13, marginTop: 6 }}>{t.invalidEmail}</div>}
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.passwordLabel}</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onBlur={() => setTouched(true)}
-                placeholder={isNo ? "minst 6 tegn" : "min. 6 characters"}
-                style={inputStyle(touched && !passwordOk)}
-              />
-              {touched && !passwordOk && <div style={{ fontSize: 13, marginTop: 6 }}>{t.passwordTooShort}</div>}
-            </div>
+          {/* Email */}
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.emailLabel}</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              placeholder={isNo ? "navn@firma.no" : "name@company.com"}
+              style={{
+                width: "100%",
+                padding: "0.7rem 0.8rem",
+                borderRadius: 12,
+                border: showEmailError ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+                background: inputBg,
+                color: "inherit",
+                outline: "none",
+              }}
+            />
+            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, color: "var(--mcl-text-dim)" }}>{t.emailHelp}</div>
+            {showEmailError && <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>{t.invalidEmail}</div>}
           </div>
 
-          {/* Company info */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-            <div>
-              <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNameLabel}</label>
-              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} onBlur={() => setTouched(true)} style={inputStyle(touched && !orgNameOk)} />
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNrLabel}</label>
-              <input value={orgNr} onChange={(e) => setOrgNr(e.target.value)} onBlur={() => setTouched(true)} style={inputStyle(touched && !orgNrOk)} />
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.contactNameLabel}</label>
-              <input
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                onBlur={() => setTouched(true)}
-                style={inputStyle(touched && !contactNameOk)}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phoneLabel}</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={() => setTouched(true)} style={inputStyle(touched && !phoneOk)} />
-            </div>
+          {/* Password */}
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.passwordLabel}</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => setPasswordTouched(true)}
+              placeholder={isNo ? "Minst 6 tegn" : "At least 6 characters"}
+              style={{
+                width: "100%",
+                padding: "0.7rem 0.8rem",
+                borderRadius: 12,
+                border: showPasswordError ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+                background: inputBg,
+                color: "inherit",
+                outline: "none",
+              }}
+            />
+            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, color: "var(--mcl-text-dim)" }}>{t.passwordHelp}</div>
+            {showPasswordError && <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>{t.invalidPassword}</div>}
           </div>
 
-          {touched && !allOk && (
-            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: "1rem", color: "var(--mcl-text-dim)" }}>
-              {t.requiredHint}
+          {/* Firmainfo (kun ved kjøp) */}
+          {mode === "buy" && (
+            <div style={{ marginBottom: "1rem" }}>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.orgTitle}</div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgName}</label>
+                  <input
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder={isNo ? "Firma AS" : "Company Ltd"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNr}</label>
+                  <input
+                    value={orgNr}
+                    onChange={(e) => setOrgNr(e.target.value)}
+                    placeholder={isNo ? "9 siffer" : "9 digits"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: !orgNrOk ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.contactName}</label>
+                  <input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phone}</label>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={isNo ? "+47 ..." : "+47 ..."}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {showCompanyError && (
+                <div style={{ marginTop: 10, fontSize: 13, opacity: 0.95 }}>
+                  {!orgNrOk ? t.invalidOrgNr : t.missingCompany}
+                </div>
+              )}
             </div>
           )}
 
@@ -516,11 +613,21 @@ const PaywallModal: React.FC<Props> = ({
                     <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.periodLabel}</div>
                     <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input type="radio" name="billingPeriod" checked={billingPeriod === "month"} onChange={() => setBillingPeriod("month")} />
+                        <input
+                          type="radio"
+                          name="billingPeriod"
+                          checked={billingPeriod === "month"}
+                          onChange={() => setBillingPeriod("month")}
+                        />
                         {t.month}
                       </label>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input type="radio" name="billingPeriod" checked={billingPeriod === "year"} onChange={() => setBillingPeriod("year")} />
+                        <input
+                          type="radio"
+                          name="billingPeriod"
+                          checked={billingPeriod === "year"}
+                          onChange={() => setBillingPeriod("year")}
+                        />
                         {t.year}
                       </label>
                     </div>
@@ -530,11 +637,21 @@ const PaywallModal: React.FC<Props> = ({
                     <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.typeLabel}</div>
                     <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input type="radio" name="purchaseType" checked={purchaseType === "subscription"} onChange={() => setPurchaseType("subscription")} />
+                        <input
+                          type="radio"
+                          name="purchaseType"
+                          checked={purchaseType === "subscription"}
+                          onChange={() => setPurchaseType("subscription")}
+                        />
                         {t.subscription}
                       </label>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input type="radio" name="purchaseType" checked={purchaseType === "one_time"} onChange={() => setPurchaseType("one_time")} />
+                        <input
+                          type="radio"
+                          name="purchaseType"
+                          checked={purchaseType === "one_time"}
+                          onChange={() => setPurchaseType("one_time")}
+                        />
                         {t.oneTime}
                       </label>
                     </div>
@@ -568,11 +685,14 @@ const PaywallModal: React.FC<Props> = ({
                     <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
                     <div style={{ textAlign: "right", fontWeight: 900 }}>
                       {formatKr(selectedInclVat, lang)}
-                      {purchaseType === "subscription" && (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
+                      {purchaseType === "subscription" &&
+                        (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, color: "var(--mcl-text-dim)" }}>{currency}</div>
+                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, color: "var(--mcl-text-dim)" }}>
+                    {currency}
+                  </div>
                 </div>
               </div>
 
