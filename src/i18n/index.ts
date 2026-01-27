@@ -43,9 +43,28 @@ function deepGet(obj: unknown, path: string): unknown {
     .reduce((acc: any, key) => (acc ? acc[key] : undefined), obj as any);
 }
 
+type Vars = Record<string, string | number | boolean | null | undefined>;
+
+function interpolate(template: string, vars: Vars): string {
+  // Støtter {{month}} / {{year}} (og andre keys)
+  return template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, k) => {
+    const v = vars[k];
+    return v === null || v === undefined ? "" : String(v);
+  });
+}
+
 export function createT(dict: Dict) {
-  return function t<T = unknown>(key: string): T {
+  return function t<T = unknown>(key: string, vars?: Vars): T {
     const v = deepGet(dict, key);
-    return (v === undefined ? (key as unknown) : v) as T;
+
+    // Mangler nøkkel -> returner key (som før)
+    if (v === undefined) return key as unknown as T;
+
+    // Kun strings kan interpoleres
+    if (typeof v === "string" && vars) {
+      return interpolate(v, vars) as unknown as T;
+    }
+
+    return v as T;
   };
 }
