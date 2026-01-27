@@ -180,47 +180,43 @@ const PaywallModal: React.FC<Props> = ({
     close: isNo ? "Lukk" : "Close",
 
     emailLabel: isNo ? "E-postadresse" : "Email address",
-    emailHelp: isNo
-      ? "Brukes til å opprette konto og knytte lisens/prøveperiode til bruker."
-      : "Used to create an account and connect license/trial to the user.",
-
     passwordLabel: isNo ? "Passord" : "Password",
-    passwordHelp: isNo
-      ? "Brukes til å opprette/logge inn brukeren før prøveperiode/kjøp."
-      : "Used to create/sign in the user before trial/purchase.",
 
-    buyerTypeLabel: isNo ? "Hvem kjøper?" : "Who is buying?",
     buyerCompany: isNo ? "Bedrift" : "Company",
     buyerPrivate: isNo ? "Privat" : "Private",
 
-    orgTitle: isNo ? "Firmainfo" : "Company info",
     orgName: isNo ? "Firmanavn" : "Company name",
     orgNr: isNo ? "Org.nr" : "Org number",
     contactName: isNo ? "Kontaktperson" : "Contact person",
     phone: isNo ? "Telefon" : "Phone",
 
-    privateTitle: isNo ? "Privatinfo" : "Private info",
     fullName: isNo ? "Navn" : "Full name",
     country: isNo ? "Land" : "Country",
 
+    // Titles
     trialTitle: isNo ? "Prøv Fullversjon gratis i 10 dager" : "Try Full version free for 10 days",
     trialBody: isNo
-      ? "Full funksjonalitet i 10 dager. Skriv inn e-post og passord for å starte."
-      : "Full functionality for 10 days. Enter email and password to start.",
+      ? "Skriv inn e-post og passord for å starte prøveperioden."
+      : "Enter email and password to start the trial.",
     startTrial: isNo ? "Start prøveperiode" : "Start trial",
 
     buyTitle: isNo ? "Kjøp lisens for Fullversjon" : "Buy Full version license",
     buyBody: isNo
-      ? "Fyll inn informasjon én gang, velg betalingsperiode og kjøpstype, og gå til betaling."
-      : "Fill in the details once, choose billing period and purchase type, and proceed to checkout.",
+      ? "Fyll inn informasjon én gang, velg lisenstype og gå til betaling."
+      : "Fill in the details once, choose license type, and proceed to checkout.",
 
-    periodLabel: isNo ? "Betalingsperiode" : "Billing period",
+    // Purchase controls
+    licenseType: isNo ? "Lisenstype" : "License type",
+    subscription: isNo ? "Abonnement" : "Subscription",
+    oneTime: isNo ? "Enkeltkjøp" : "One-time",
+
+    payCadence: isNo ? "Med betaling:" : "With billing:",
     month: isNo ? "Månedlig" : "Monthly",
     year: isNo ? "Årlig" : "Yearly",
 
-    typeLabel: isNo ? "Kjøpstype" : "Purchase type",
-    subscription: isNo ? "Abonnement" : "Subscription",
-    oneTime: isNo ? "Engangsbetaling" : "One-time payment",
+    duration: isNo ? "Varighet" : "Duration",
+    oneMonth: isNo ? "1 måned" : "1 month",
+    oneYear: isNo ? "1 år" : "1 year",
 
     calcPrice: isNo ? "Pris" : "Price",
     calcVat: isNo ? "Mva" : "VAT",
@@ -366,8 +362,6 @@ const PaywallModal: React.FC<Props> = ({
         `${window.location.origin}${window.location.pathname}`;
 
       const publicBase = normalizePublicHashBase(rawPublic);
-
-      // NB: behold pathen du har (progress/checkout), men legg til from=checkout
       const successUrl = `${publicBase}progress/checkout?from=checkout&success=1`;
       const cancelUrl = `${publicBase}progress/checkout?from=checkout&canceled=1`;
 
@@ -410,7 +404,6 @@ const PaywallModal: React.FC<Props> = ({
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
-        // Hvis vi får HTML tilbake, har vi nesten garantert truffet feil endpoint
         const looksLikeHtml = /<html|<!doctype/i.test(txt);
         if (looksLikeHtml) {
           throw new Error(`${t.wrongEndpoint}\nHTTP ${res.status} @ ${endpoint}`);
@@ -456,14 +449,42 @@ const PaywallModal: React.FC<Props> = ({
     ? "1px solid rgba(255,255,255,0.20)"
     : "1px solid rgba(0,0,0,0.16)";
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontWeight: 600,
+    marginBottom: 6,
+  };
+
+  const inputStyle = (errorBorder?: boolean): React.CSSProperties => ({
+    width: "100%",
+    padding: "0.7rem 0.8rem",
+    borderRadius: 12,
+    border: errorBorder ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+    background: inputBg,
+    color: "inherit",
+    outline: "none",
+  });
+
+  const sectionTitleStyle: React.CSSProperties = {
+    fontWeight: 650,
+    marginBottom: 10,
+  };
+
   const actionBtnStyle: React.CSSProperties = {
     padding: "0.8rem 1rem",
     borderRadius: 12,
     border: chipBorder,
-    background: "rgba(255,255,255,0.10)",
+    background: "transparent",
     color: "inherit",
     cursor: busy ? "default" : "pointer",
-    fontWeight: 900,
+    fontWeight: 650,
+  };
+
+  const radioRowStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 14,
+    flexWrap: "wrap",
+    alignItems: "center",
   };
 
   return (
@@ -515,7 +536,7 @@ const PaywallModal: React.FC<Props> = ({
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <strong style={{ fontSize: 16 }}>{title}</strong>
+            <div style={{ fontSize: 16, fontWeight: 650 }}>{title}</div>
             <div
               style={{
                 fontSize: 13,
@@ -539,6 +560,7 @@ const PaywallModal: React.FC<Props> = ({
               cursor: "pointer",
               flex: "0 0 auto",
               height: 36,
+              fontWeight: 600,
             }}
           >
             {t.close}
@@ -547,92 +569,10 @@ const PaywallModal: React.FC<Props> = ({
 
         {/* Body */}
         <div style={{ padding: "1rem", overflow: "auto" }}>
-          {/* Email */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-              {t.emailLabel}
-            </label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setEmailTouched(true)}
-              placeholder={isNo ? "navn@firma.no" : "name@company.com"}
-              style={{
-                width: "100%",
-                padding: "0.7rem 0.8rem",
-                borderRadius: 12,
-                border: showEmailError
-                  ? "1px solid rgba(255,80,80,0.75)"
-                  : chipBorder,
-                background: inputBg,
-                color: "inherit",
-                outline: "none",
-              }}
-            />
-            <div
-              style={{
-                fontSize: 13,
-                opacity: 0.8,
-                marginTop: 6,
-                color: "var(--mcl-text-dim)",
-              }}
-            >
-              {t.emailHelp}
-            </div>
-            {showEmailError && (
-              <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                {t.invalidEmail}
-              </div>
-            )}
-          </div>
-
-          {/* Password */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-              {t.passwordLabel}
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={() => setPasswordTouched(true)}
-              placeholder={isNo ? "Minst 6 tegn" : "At least 6 characters"}
-              style={{
-                width: "100%",
-                padding: "0.7rem 0.8rem",
-                borderRadius: 12,
-                border: showPasswordError
-                  ? "1px solid rgba(255,80,80,0.75)"
-                  : chipBorder,
-                background: inputBg,
-                color: "inherit",
-                outline: "none",
-              }}
-            />
-            <div
-              style={{
-                fontSize: 13,
-                opacity: 0.8,
-                marginTop: 6,
-                color: "var(--mcl-text-dim)",
-              }}
-            >
-              {t.passwordHelp}
-            </div>
-            {showPasswordError && (
-              <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                {t.invalidPassword}
-              </div>
-            )}
-          </div>
-
-          {/* Buyer toggle (kun ved kjøp) */}
+          {/* Buyer toggle først (kun ved kjøp) */}
           {mode === "buy" && (
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                {t.buyerTypeLabel}
-              </div>
-              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ marginBottom: "0.85rem" }}>
+              <div style={radioRowStyle}>
                 <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input
                     type="radio"
@@ -655,11 +595,52 @@ const PaywallModal: React.FC<Props> = ({
             </div>
           )}
 
+          {/* Email + Password på én rad */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+              marginBottom: "0.9rem",
+            }}
+          >
+            <div>
+              <label style={labelStyle}>{t.emailLabel}</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setEmailTouched(true)}
+                placeholder={isNo ? "navn@firma.no" : "name@company.com"}
+                style={inputStyle(showEmailError)}
+              />
+              {showEmailError && (
+                <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
+                  {t.invalidEmail}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label style={labelStyle}>{t.passwordLabel}</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setPasswordTouched(true)}
+                placeholder={isNo ? "Minst 6 tegn" : "At least 6 characters"}
+                style={inputStyle(showPasswordError)}
+              />
+              {showPasswordError && (
+                <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
+                  {t.invalidPassword}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Firmainfo / Privatinfo (kun ved kjøp) */}
           {mode === "buy" && buyerType === "company" && (
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.orgTitle}</div>
-
+            <div style={{ marginBottom: "0.95rem" }}>
               <div
                 style={{
                   display: "grid",
@@ -668,82 +649,42 @@ const PaywallModal: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.orgName}
-                  </label>
+                  <label style={labelStyle}>{t.orgName}</label>
                   <input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder={isNo ? "Firma AS" : "Company Ltd"}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(false)}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.orgNr}
-                  </label>
+                  <label style={labelStyle}>{t.orgNr}</label>
                   <input
                     value={orgNr}
                     onChange={(e) => setOrgNr(e.target.value)}
                     placeholder={isNo ? "9 siffer" : "9 digits"}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: !orgNrOk ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(!orgNrOk)}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.contactName}
-                  </label>
+                  <label style={labelStyle}>{t.contactName}</label>
                   <input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(false)}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.phone}
-                  </label>
+                  <label style={labelStyle}>{t.phone}</label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={isNo ? "+47 ..." : "+47 ..."}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(false)}
                   />
                 </div>
               </div>
@@ -751,9 +692,7 @@ const PaywallModal: React.FC<Props> = ({
           )}
 
           {mode === "buy" && buyerType === "private" && (
-            <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.privateTitle}</div>
-
+            <div style={{ marginBottom: "0.95rem" }}>
               <div
                 style={{
                   display: "grid",
@@ -762,62 +701,32 @@ const PaywallModal: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.fullName}
-                  </label>
+                  <label style={labelStyle}>{t.fullName}</label>
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(false)}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.country}
-                  </label>
+                  <label style={labelStyle}>{t.country}</label>
                   <input
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     placeholder={isNo ? "Norge" : "Norway"}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(false)}
                   />
                 </div>
 
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.phone}
-                  </label>
+                  <label style={labelStyle}>{t.phone}</label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder={isNo ? "+47 ..." : "+47 ..."}
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem 0.8rem",
-                      borderRadius: 12,
-                      border: chipBorder,
-                      background: inputBg,
-                      color: "inherit",
-                      outline: "none",
-                    }}
+                    style={inputStyle(false)}
                   />
                 </div>
               </div>
@@ -825,12 +734,7 @@ const PaywallModal: React.FC<Props> = ({
           )}
 
           {mode === "trial" ? (
-            <button
-              type="button"
-              onClick={startTrial}
-              disabled={busy}
-              style={actionBtnStyle}
-            >
+            <button type="button" onClick={startTrial} disabled={busy} style={actionBtnStyle}>
               {t.startTrial}
             </button>
           ) : (
@@ -845,35 +749,9 @@ const PaywallModal: React.FC<Props> = ({
               >
                 {/* LEFT */}
                 <div>
-                  <div style={{ marginBottom: "0.9rem" }}>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>
-                      {t.periodLabel}
-                    </div>
-                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input
-                          type="radio"
-                          name="billingPeriod"
-                          checked={billingPeriod === "month"}
-                          onChange={() => setBillingPeriod("month")}
-                        />
-                        {t.month}
-                      </label>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input
-                          type="radio"
-                          name="billingPeriod"
-                          checked={billingPeriod === "year"}
-                          onChange={() => setBillingPeriod("year")}
-                        />
-                        {t.year}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.typeLabel}</div>
-                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                  <div style={{ marginBottom: "0.95rem" }}>
+                    <div style={sectionTitleStyle}>{t.licenseType}</div>
+                    <div style={radioRowStyle}>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <input
                           type="radio"
@@ -894,6 +772,56 @@ const PaywallModal: React.FC<Props> = ({
                       </label>
                     </div>
                   </div>
+
+                  {purchaseType === "subscription" ? (
+                    <div>
+                      <div style={sectionTitleStyle}>{t.payCadence}</div>
+                      <div style={radioRowStyle}>
+                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="radio"
+                            name="billingPeriod"
+                            checked={billingPeriod === "month"}
+                            onChange={() => setBillingPeriod("month")}
+                          />
+                          {t.month}
+                        </label>
+                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="radio"
+                            name="billingPeriod"
+                            checked={billingPeriod === "year"}
+                            onChange={() => setBillingPeriod("year")}
+                          />
+                          {t.year}
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={sectionTitleStyle}>{t.duration}</div>
+                      <div style={radioRowStyle}>
+                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="radio"
+                            name="billingPeriod"
+                            checked={billingPeriod === "month"}
+                            onChange={() => setBillingPeriod("month")}
+                          />
+                          {t.oneMonth}
+                        </label>
+                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="radio"
+                            name="billingPeriod"
+                            checked={billingPeriod === "year"}
+                            onChange={() => setBillingPeriod("year")}
+                          />
+                          {t.oneYear}
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* RIGHT */}
@@ -912,20 +840,21 @@ const PaywallModal: React.FC<Props> = ({
                       rowGap: 8,
                       columnGap: 14,
                       alignItems: "baseline",
+                      fontSize: 13.5,
                     }}
                   >
-                    <div style={{ fontWeight: 800 }}>{t.calcPrice}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 800 }}>
+                    <div style={{ fontWeight: 600 }}>{t.calcPrice}:</div>
+                    <div style={{ textAlign: "right", fontWeight: 650 }}>
                       {formatKr(selectedExVat, lang)}
                     </div>
 
-                    <div style={{ fontWeight: 800 }}>{t.calcVat}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 800 }}>
+                    <div style={{ fontWeight: 600 }}>{t.calcVat}:</div>
+                    <div style={{ textAlign: "right", fontWeight: 650 }}>
                       {formatKr(vatAmount, lang)}
                     </div>
 
-                    <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 900 }}>
+                    <div style={{ fontWeight: 650 }}>{t.calcTotal}:</div>
+                    <div style={{ textAlign: "right", fontWeight: 700 }}>
                       {formatKr(selectedInclVat, lang)}
                       {purchaseType === "subscription" &&
                         (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
@@ -939,12 +868,7 @@ const PaywallModal: React.FC<Props> = ({
               </div>
 
               <div style={{ marginTop: "1.1rem" }}>
-                <button
-                  type="button"
-                  onClick={goToCheckout}
-                  disabled={busy}
-                  style={actionBtnStyle}
-                >
+                <button type="button" onClick={goToCheckout} disabled={busy} style={actionBtnStyle}>
                   {t.goToCheckout}
                 </button>
               </div>
@@ -960,9 +884,14 @@ const PaywallModal: React.FC<Props> = ({
                 border: chipBorder,
                 background: inputBg,
                 opacity: 0.98,
+                fontSize: 13.5,
               }}
             >
-              {error ? <div style={{ whiteSpace: "pre-wrap" }}>{error}</div> : <div>{status}</div>}
+              {error ? (
+                <div style={{ whiteSpace: "pre-wrap" }}>{error}</div>
+              ) : (
+                <div>{status}</div>
+              )}
             </div>
           )}
         </div>
