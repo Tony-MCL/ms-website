@@ -342,13 +342,19 @@ const PaywallModal: React.FC<Props> = ({
       const idToken = await ensureAuthAndGetIdToken();
 
       // ✅ Kontrollerte retur-URLer (Step 1)
-      const publicSite =
-        (import.meta as any).env?.VITE_PUBLIC_SITE_URL?.replace(/\/+$/, "/") ||
-        `${window.location.origin}${window.location.pathname.replace(/\/+$/, "/")}#/`;
+      const rawBase =
+        (import.meta as any).env?.VITE_PUBLIC_SITE_URL ||
+        `${window.location.origin}${window.location.pathname}`;
       
-      const successUrl = `${publicSite}progress/priser?from=checkout&success=1`;
-      const cancelUrl = `${publicSite}progress/priser?from=checkout&canceled=1`;
-
+      const base = String(rawBase).trim();
+      
+      // Normaliser til …/#/ (HashRouter)
+      const publicBase = base.includes("#/")
+        ? base.replace(/\/+$/, "/")
+        : base.replace(/\/+$/, "") + "/#/";
+      
+      const successUrl = `${publicBase}progress/priser?from=checkout&success=1`;
+      const cancelUrl = `${publicBase}progress/priser?from=checkout&canceled=1`;
 
       const payload: any = {
         email: email.trim(),
