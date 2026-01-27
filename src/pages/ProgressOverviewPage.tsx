@@ -5,7 +5,6 @@ import { useI18n } from "../i18n/useI18n";
 type Pair = {
   factTitle: string;
   factBody: string;
-  imgSrc: string;
   imgAlt: string;
   imgCaption: string;
 };
@@ -13,114 +12,36 @@ type Pair = {
 const assetBase = import.meta.env.BASE_URL || "/";
 
 const ProgressOverviewPage: React.FC = () => {
-  const { lang } = useI18n();
+  const { t } = useI18n();
 
-  const isNo = lang === "no";
+  // i18n
+  const title = t<string>("progressOverview.title");
+  const lead = t<string>("progressOverview.lead");
+  const tryFreeCta = t<string>("progressOverview.tryFreeCta");
+  const closeLabel = t<string>("progressOverview.closeLabel");
+  const imageViewerLabel = t<string>("progressOverview.imageViewerLabel");
+  const screenshotLabel = t<string>("progressOverview.screenshotLabel");
+  const missingTitle = t<string>("progressOverview.missingTitle");
+  const missingBodyPrefix = t<string>("progressOverview.missingBodyPrefix");
 
-  const copy = isNo
-    ? {
-        title: "Slik fungerer Progress",
-        lead:
-          "Her er den korte forklaringen – med skjermbilder. Progress er laget for å gjøre fremdrift synlig, forståelig og enkel å justere underveis.",
-        tryFreeCta: "Prøv Progress gratis",
-        closeLabel: "Lukk",
-        imageViewerLabel: "Bildevisning",
-        screenshotLabel: "Skjermbilde",
-        missingTitle: "Mangler bilde",
-        missingBodyPrefix: "Legg filen i",
-        pairs: [
-          {
-            factTitle: "Tabellen er kilden til sannhet",
-            factBody:
-              "Du skriver inn aktivitet, datoer og informasjon i tabellen. Gantt-visningen viser nøyaktig de samme radene – som tidsblokker. Det betyr færre overraskelser og mindre manuelt arbeid.",
-            imgSrc: `${assetBase}progress/progress-01.png`,
-            imgAlt: "Skjermbilde: Plan i tabell og Gantt",
-            imgCaption: "Tabell og Gantt henger sammen – samme rader, samme plan.",
-          },
-          {
-            factTitle: "Visuell plan som er lett å lese",
-            factBody:
-              "Du får en plan som er enkel å presentere for andre – og enkel å forstå for deg selv. Målet er ro og oversikt, ikke mer administrasjon.",
-            imgSrc: `${assetBase}progress/progress-02.png`,
-            imgAlt: "Skjermbilde: Oversikt og lesbarhet",
-            imgCaption: "Lesbarhet først: rolig layout som er enkel å dele.",
-          },
-          {
-            factTitle: "Rask å endre når virkeligheten endrer seg",
-            factBody:
-              "Planer blir aldri perfekte. Det viktige er at det går fort å oppdatere og justere, uten at du må “redesigne” alt fra bunnen av.",
-            imgSrc: `${assetBase}progress/progress-03.png`,
-            imgAlt: "Skjermbilde: Utskrift / deling",
-            imgCaption: "Bygget for deling og utskrift – uten at det blir rot.",
-          },
-          {
-            factTitle: "Bygget for utskrift og deling",
-            factBody:
-              "En plan har ofte en mottaker. Progress er laget med tanke på at du skal kunne vise, dele og skrive ut – uten å miste lesbarhet.",
-            imgSrc: `${assetBase}progress/progress-04.png`,
-            imgAlt: "Skjermbilde: Detaljer og flyt",
-            imgCaption: "Detaljer når du trenger det – uten å miste flyten.",
-          },
-        ] as Pair[],
-      }
-    : {
-        title: "How Progress works",
-        lead:
-          "Here’s the short explanation — with screenshots. Progress is built to make progress visible, easy to understand, and simple to adjust as things change.",
-        tryFreeCta: "Try Progress free",
-        closeLabel: "Close",
-        imageViewerLabel: "Image viewer",
-        screenshotLabel: "Screenshot",
-        missingTitle: "Missing image",
-        missingBodyPrefix: "Place the file at",
-        pairs: [
-          {
-            factTitle: "The table is the source of truth",
-            factBody:
-              "You enter activities, dates, and details in the table. The Gantt view shows the exact same rows — as time blocks. Fewer surprises, less manual work.",
-            imgSrc: `${assetBase}progress/progress-01.png`,
-            imgAlt: "Screenshot: Table and Gantt plan",
-            imgCaption: "Table and Gantt stay aligned — same rows, same plan.",
-          },
-          {
-            factTitle: "A visual plan that’s easy to read",
-            factBody:
-              "You get a plan that’s easy to present to others — and easy to understand yourself. The goal is calm clarity, not more admin.",
-            imgSrc: `${assetBase}progress/progress-02.png`,
-            imgAlt: "Screenshot: Overview and readability",
-            imgCaption: "Readability first: a calm layout that’s easy to share.",
-          },
-          {
-            factTitle: "Fast to adjust when reality changes",
-            factBody:
-              "Plans are never perfect. What matters is being able to update and adapt quickly without rebuilding everything from scratch.",
-            imgSrc: `${assetBase}progress/progress-03.png`,
-            imgAlt: "Screenshot: Print / sharing",
-            imgCaption: "Built for sharing and printing — without the clutter.",
-          },
-          {
-            factTitle: "Built for sharing and printing",
-            factBody:
-              "A plan often has an audience. Progress is designed so you can present, share, and print without losing readability.",
-            imgSrc: `${assetBase}progress/progress-04.png`,
-            imgAlt: "Screenshot: Details and flow",
-            imgCaption: "Details when you need them — without losing flow.",
-          },
-        ] as Pair[],
-      };
+  const pairs = useMemo(() => {
+    const raw = t<Pair[]>("progressOverview.pairs") || [];
+    return raw.map((p, idx) => ({
+      ...p,
+      imgSrc: `${assetBase}progress/progress-0${idx + 1}.png`,
+    }));
+  }, [t]);
 
   // Lightbox state
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [missing, setMissing] = useState<Record<number, boolean>>({});
 
-  const pairs: Pair[] = useMemo(() => copy.pairs, [copy.pairs]);
-
   return (
     <main className="page">
       <section className="fs-hero">
-        <h1>{copy.title}</h1>
+        <h1>{title}</h1>
         <p className="fs-tagline" style={{ maxWidth: 980 }}>
-          {copy.lead}
+          {lead}
         </p>
 
         <div
@@ -133,14 +54,14 @@ const ProgressOverviewPage: React.FC = () => {
           }}
         >
           <Link className="hero-cta" to="/progress/app">
-            {copy.tryFreeCta}
+            {tryFreeCta}
           </Link>
         </div>
       </section>
 
       {/* Kombinert: fakta ↔ bilde ↔ fakta ↔ bilde */}
       <section className="intro-grid two-columns" style={{ marginTop: 0 }}>
-        {pairs.map((p, idx) => {
+        {pairs.map((p: any, idx: number) => {
           const isMissing = !!missing[idx];
 
           const factCard = (
@@ -204,10 +125,10 @@ const ProgressOverviewPage: React.FC = () => {
                   >
                     <div style={{ maxWidth: 520 }}>
                       <strong style={{ display: "block", marginBottom: 8 }}>
-                        {copy.missingTitle}
+                        {missingTitle}
                       </strong>
                       <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-                        {copy.missingBodyPrefix}{" "}
+                        {missingBodyPrefix}{" "}
                         <code>{`public/progress/progress-0${idx + 1}.png`}</code>
                       </div>
                     </div>
@@ -240,7 +161,7 @@ const ProgressOverviewPage: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={copy.imageViewerLabel}
+          aria-label={imageViewerLabel}
           onClick={() => setOpenIndex(null)}
           style={{
             position: "fixed",
@@ -280,7 +201,7 @@ const ProgressOverviewPage: React.FC = () => {
               }}
             >
               <strong>
-                {copy.screenshotLabel} {openIndex + 1} / {pairs.length}
+                {screenshotLabel} {openIndex + 1} / {pairs.length}
               </strong>
 
               <button
@@ -295,7 +216,7 @@ const ProgressOverviewPage: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                {copy.closeLabel}
+                {closeLabel}
               </button>
             </div>
 
@@ -325,11 +246,13 @@ const ProgressOverviewPage: React.FC = () => {
                 >
                   <div style={{ maxWidth: 520 }}>
                     <strong style={{ display: "block", marginBottom: 8 }}>
-                      {copy.missingTitle}
+                      {missingTitle}
                     </strong>
                     <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-                      {copy.missingBodyPrefix}{" "}
-                      <code>{`public/progress/progress-0${openIndex + 1}.png`}</code>
+                      {missingBodyPrefix}{" "}
+                      <code>{`public/progress/progress-0${
+                        openIndex + 1
+                      }.png`}</code>
                     </div>
                   </div>
                 </div>
