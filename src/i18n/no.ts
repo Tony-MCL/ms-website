@@ -620,6 +620,66 @@ progress: {
     pricesBtn: "Se priser og lisens",
   },
 },
+progressPricing: {
+  title: "Priser og lisens",
+  lead: "Velg nivået som passer. Du kan starte gratis og oppgradere når du vil.",
+
+  openApp: "Åpne Progress-appen",
+
+  banner: {
+    successMsg:
+      "✅ Betaling registrert. Åpne appen – status oppdateres automatisk (evt. etter en refresh).",
+    canceledMsg: "↩️ Kjøpet ble avbrutt. Du er ikke oppgradert.",
+    dismissAria: "Lukk melding",
+    tryAgain: "Prøv igjen",
+  },
+
+  free: {
+    title: "Gratisversjon",
+    lead:
+      "Start uten friksjon. Gratisversjonen krever ingen registrering – du kan åpne Progress og planlegge med en gang.",
+
+    whatTitle: "Dette får du i gratisversjonen",
+    what: [
+      "Lokal lagring, begrenset til ett prosjekt av gangen",
+      "Utskrift / PDF-eksport med vannmerke",
+      "Import av prosjekter eksportert fra Fullversjon-brukere",
+    ],
+
+    trial: {
+      title: "Prøv Fullversjon gratis i 10 dager",
+      body:
+        "Du kan teste full funksjonalitet i 10 dager – helt gratis. Det eneste du trenger å gjøre er å registrere deg.",
+      cta: "Start prøveperiode →",
+    },
+  },
+
+  pro: {
+    title: "Fullversjon",
+    lead:
+      "For deg som bruker Progress jevnlig – spesielt hvis du jobber i flere prosjekter samtidig og vil ha full flyt med skylagring og eksport.",
+
+    whatTitle: "Dette får du i fullversjonen",
+    what: [
+      "Alt i gratisversjonen",
+      "Skylagring av flere prosjekter",
+      "Utskrift / PDF uten vannmerke",
+      "Eksport av prosjekter (lagre lokalt hvor du vil) – åpne senere eller del med andre",
+      "Eksport til .TSV",
+      "Lisens for profesjonell bruk",
+    ],
+
+    priceHeader: "Pris",
+    priceLine: "{{month}} kr/mnd eller {{year}} kr/år (eks. mva)",
+    introNote:
+      "Introduksjonspris for tidlige brukere. Denne prisen beholdes så lenge lisensen er aktiv.",
+
+    buyCta: "Kjøp lisens for Fullversjon",
+  },
+
+  footerNote:
+    "Progress videreutvikles fortløpende. Nye funksjoner kan på sikt danne grunnlag for et utvidet lisensutvalg. Fullversjonen vil under ingen omstendigheter miste funksjonalitet.",
+},
 
 } as const;
 
