@@ -181,12 +181,12 @@ const PaywallModal: React.FC<Props> = ({
 
     emailLabel: isNo ? "E-postadresse" : "Email address",
     emailHelp: isNo
-      ? "Brukes til å opprette konto og knytte lisens/trial til bruker."
+      ? "Brukes til å opprette konto og knytte lisens/prøveperiode til bruker."
       : "Used to create an account and connect license/trial to the user.",
 
     passwordLabel: isNo ? "Passord" : "Password",
     passwordHelp: isNo
-      ? "Brukes til å opprette/logge inn brukeren før trial/kjøp."
+      ? "Brukes til å opprette/logge inn brukeren før prøveperiode/kjøp."
       : "Used to create/sign in the user before trial/purchase.",
 
     buyerTypeLabel: isNo ? "Hvem kjøper?" : "Who is buying?",
@@ -203,13 +203,13 @@ const PaywallModal: React.FC<Props> = ({
     fullName: isNo ? "Navn" : "Full name",
     country: isNo ? "Land" : "Country",
 
-    trialTitle: isNo ? "Prøv Pro gratis i 10 dager" : "Try Pro free for 10 days",
+    trialTitle: isNo ? "Prøv Fullversjon gratis i 10 dager" : "Try Full version free for 10 days",
     trialBody: isNo
-      ? "Full Pro-funksjonalitet i 10 dager. Skriv inn e-post og passord for å starte."
-      : "Full Pro functionality for 10 days. Enter email and password to start.",
-    startTrial: isNo ? "Start 10-dagers trial" : "Start 10-day trial",
+      ? "Full funksjonalitet i 10 dager. Skriv inn e-post og passord for å starte."
+      : "Full functionality for 10 days. Enter email and password to start.",
+    startTrial: isNo ? "Start prøveperiode" : "Start trial",
 
-    buyTitle: isNo ? "Kjøp Pro-lisens" : "Buy Pro license",
+    buyTitle: isNo ? "Kjøp lisens for Fullversjon" : "Buy Full version license",
     buyBody: isNo
       ? "Fyll inn informasjon én gang, velg betalingsperiode og kjøpstype, og gå til betaling."
       : "Fill in the details once, choose billing period and purchase type, and proceed to checkout.",
@@ -331,8 +331,8 @@ const PaywallModal: React.FC<Props> = ({
 
       setStatus(
         isNo
-          ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
-          : "Trial started. You can now use Pro features for 10 days."
+          ? "Prøveperiode er startet. Du kan nå bruke Fullversjon-funksjoner i 10 dager."
+          : "Trial started. You can now use full-version features for 10 days."
       );
     } catch (e: any) {
       setError(e?.message || t.networkError);
@@ -366,8 +366,10 @@ const PaywallModal: React.FC<Props> = ({
         `${window.location.origin}${window.location.pathname}`;
 
       const publicBase = normalizePublicHashBase(rawPublic);
-      const successUrl = `${publicBase}progress/checkout?success=1`;
-      const cancelUrl  = `${publicBase}progress/checkout?canceled=1`;
+
+      // NB: behold pathen du har (progress/checkout), men legg til from=checkout
+      const successUrl = `${publicBase}progress/checkout?from=checkout&success=1`;
+      const cancelUrl = `${publicBase}progress/checkout?from=checkout&canceled=1`;
 
       const payload: any = {
         email: email.trim(),
@@ -453,6 +455,16 @@ const PaywallModal: React.FC<Props> = ({
   const chipBorder = isDark
     ? "1px solid rgba(255,255,255,0.20)"
     : "1px solid rgba(0,0,0,0.16)";
+
+  const actionBtnStyle: React.CSSProperties = {
+    padding: "0.8rem 1rem",
+    borderRadius: 12,
+    border: chipBorder,
+    background: "rgba(255,255,255,0.10)",
+    color: "inherit",
+    cursor: busy ? "default" : "pointer",
+    fontWeight: 900,
+  };
 
   return (
     <div
@@ -817,15 +829,7 @@ const PaywallModal: React.FC<Props> = ({
               type="button"
               onClick={startTrial}
               disabled={busy}
-              style={{
-                padding: "0.8rem 1rem",
-                borderRadius: 12,
-                border: chipBorder,
-                background: "rgba(255,255,255,0.10)",
-                color: "inherit",
-                cursor: busy ? "default" : "pointer",
-                fontWeight: 900,
-              }}
+              style={actionBtnStyle}
             >
               {t.startTrial}
             </button>
@@ -939,15 +943,7 @@ const PaywallModal: React.FC<Props> = ({
                   type="button"
                   onClick={goToCheckout}
                   disabled={busy}
-                  style={{
-                    padding: "0.8rem 1rem",
-                    borderRadius: 12,
-                    border: chipBorder,
-                    background: "rgba(255,255,255,0.10)",
-                    color: "inherit",
-                    cursor: busy ? "default" : "pointer",
-                    fontWeight: 900,
-                  }}
+                  style={actionBtnStyle}
                 >
                   {t.goToCheckout}
                 </button>
