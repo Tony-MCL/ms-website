@@ -76,7 +76,7 @@ const Header: React.FC = () => {
         <div className="header-logo">
           {/* Logo tar deg tilbake til MCL */}
           <a href={mclHref("/")} onClick={closeMenu}>
-            <img src={logoUrl} alt="Morning Coffee Labs" />
+            <img src={logoUrl} alt={t("header.logoAlt")} />
           </a>
         </div>
 
@@ -133,7 +133,16 @@ const Header: React.FC = () => {
             </span>
           </button>
 
-          <div className="hamburger" onClick={() => setOpen((prev) => !prev)}>
+          <div
+            className="hamburger"
+            role="button"
+            tabIndex={0}
+            aria-label={open ? t("header.mobileMenu.close") : t("header.mobileMenu.open")}
+            onClick={() => setOpen((prev) => !prev)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setOpen((prev) => !prev);
+            }}
+          >
             ☰
           </div>
         </div>
