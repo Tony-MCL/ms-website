@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+// src/pages/ProgressPricingPage.tsx
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 import PaywallModal from "../components/PaywallModal";
@@ -24,12 +25,57 @@ const PRO_YEAR_EX_VAT = 1290;
 const VAT_RATE = 0.25;
 const CURRENCY = "NOK";
 
+function getParam(name: string) {
+  try {
+    const u = new URL(window.location.href);
+    return u.searchParams.get(name);
+  } catch {
+    return null;
+  }
+}
+
+function stripParams() {
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.delete("from");
+    u.searchParams.delete("refresh");
+    u.searchParams.delete("canceled");
+    window.history.replaceState({}, "", u.toString());
+  } catch {
+    // ignore
+  }
+}
+
 const ProgressPricingPage: React.FC = () => {
   const { lang } = useI18n();
   const isNo = lang === "no";
 
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallMode, setPaywallMode] = useState<"trial" | "buy">("buy");
+
+  // simple banner message after checkout cancel/success landing
+  const [banner, setBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    const from = getParam("from");
+    const refresh = getParam("refresh");
+    const canceled = getParam("canceled");
+
+    if (canceled === "1") {
+      setBanner(isNo ? "Betalingen ble avbrutt." : "Payment was canceled.");
+      stripParams();
+      return;
+    }
+
+    if (from === "checkout" || refresh === "1") {
+      setBanner(
+        isNo
+          ? "Betaling registrert. Åpne appen – status oppdateres automatisk."
+          : "Payment registered. Open the app — status updates automatically."
+      );
+      stripParams();
+    }
+  }, [isNo]);
 
   const title = isNo ? "Priser og lisens" : "Pricing & license";
   const lead = isNo
@@ -81,6 +127,7 @@ const ProgressPricingPage: React.FC = () => {
         "Print / PDF with no watermark",
         "Project export (save anywhere locally) — reopen later or share with others",
         ".TSV export",
+        ".TSV export",
         "License for professional use",
       ];
 
@@ -120,6 +167,21 @@ const ProgressPricingPage: React.FC = () => {
         <p className="fs-tagline" style={{ maxWidth: 980 }}>
           {lead}
         </p>
+
+        {banner && (
+          <div
+            style={{
+              marginTop: "0.9rem",
+              padding: "0.75rem 0.9rem",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.18)",
+              background: "rgba(255,255,255,0.06)",
+              maxWidth: 980,
+            }}
+          >
+            {banner}
+          </div>
+        )}
 
         <div
           style={{
