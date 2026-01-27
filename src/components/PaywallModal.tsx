@@ -366,8 +366,8 @@ const PaywallModal: React.FC<Props> = ({
         `${window.location.origin}${window.location.pathname}`;
 
       const publicBase = normalizePublicHashBase(rawPublic);
-      const successUrl = `${publicBase}progress/priser?from=checkout&success=1`;
-      const cancelUrl = `${publicBase}progress/priser?from=checkout&canceled=1`;
+      const successUrl = `${publicBase}progress/checkout?success=1`;
+      const cancelUrl  = `${publicBase}progress/checkout?canceled=1`;
 
       const payload: any = {
         email: email.trim(),
