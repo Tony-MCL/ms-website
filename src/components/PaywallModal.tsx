@@ -342,9 +342,13 @@ const PaywallModal: React.FC<Props> = ({
       const idToken = await ensureAuthAndGetIdToken();
 
       // ✅ Kontrollerte retur-URLer (Step 1)
-      const origin = window.location.origin;
-      const successUrl = `${origin}/progress/pricing?from=checkout&success=1`;
-      const cancelUrl = `${origin}/progress/pricing?from=checkout&canceled=1`;
+      const publicSite =
+        (import.meta as any).env?.VITE_PUBLIC_SITE_URL?.replace(/\/+$/, "/") ||
+        `${window.location.origin}${window.location.pathname.replace(/\/+$/, "/")}#/`;
+      
+      const successUrl = `${publicSite}progress/priser?from=checkout&success=1`;
+      const cancelUrl = `${publicSite}progress/priser?from=checkout&canceled=1`;
+
 
       const payload: any = {
         email: email.trim(),
