@@ -698,6 +698,66 @@ progress: {
     pricesBtn: "Pricing & license",
   },
 },
+progressPricing: {
+  title: "Pricing & license",
+  lead: "Choose the level that fits. Start free and upgrade anytime.",
+
+  openApp: "Open the Progress app",
+
+  banner: {
+    successMsg:
+      "✅ Payment registered. Open the app — status updates automatically (sometimes after a refresh).",
+    canceledMsg: "↩️ Checkout was canceled. You were not upgraded.",
+    dismissAria: "Dismiss",
+    tryAgain: "Try again",
+  },
+
+  free: {
+    title: "Free version",
+    lead:
+      "Start with zero friction. The free version requires no registration — open Progress and plan immediately.",
+
+    whatTitle: "What you get in the free version",
+    what: [
+      "Local storage, limited to one project at a time",
+      "Print / PDF export with watermark",
+      "Import projects exported by full-version users",
+    ],
+
+    trial: {
+      title: "Try Full version free for 10 days",
+      body:
+        "You can test full functionality for 10 days — completely free. All you need to do is register.",
+      cta: "Start trial →",
+    },
+  },
+
+  pro: {
+    title: "Full version",
+    lead:
+      "For regular use — especially if you work across multiple projects and want the full workflow with cloud storage and exports.",
+
+    whatTitle: "What you get in the full version",
+    what: [
+      "Everything in the free version",
+      "Cloud storage for multiple projects",
+      "Print / PDF with no watermark",
+      "Project export (save anywhere locally) — reopen later or share with others",
+      ".TSV export",
+      "License for professional use",
+    ],
+
+    priceHeader: "Price",
+    priceLine: "{{month}} NOK/mo or {{year}} NOK/yr (ex. VAT)",
+    introNote:
+      "Introductory price for early users. This price is kept for as long as the license remains active.",
+
+    buyCta: "Buy Full version license",
+  },
+
+  footerNote:
+    "Progress will continue to evolve. New features may later support an expanded license structure. The full version will never lose functionality.",
+},
 
 } as const;
 export default en;
