@@ -546,6 +546,80 @@ progressOverview: {
     },
   ],
 },
+progress: {
+  hero: {
+    tagline: "Fremdriftsplanlegging uten støy.",
+    lead1:
+      "Progress er et enkelt verktøy for å planlegge det som faktisk må bli gjort – uten overflødige funksjoner, kompliserte oppsett eller unødvendige begreper.",
+    lead2:
+      "En fremdriftsplan handler om oversikt, prioritering og å komme i mål. Den har alltid vært en naturlig del av hvordan mennesker planlegger arbeid – lenge før det fantes metoder, verktøy og begreper for prosjektstyring.",
+    lead3:
+      "Når noe skal bygges, læres eller gjennomføres over tid, oppstår det samme behovet igjen og igjen: å se helheten, forstå rekkefølgen, og vite når noe faktisk er ferdig.",
+    lead4:
+      "Progress er laget for å støtte dette behovet i praksis – enten det er et prosjekt, et semester, et salgsarbeid eller en privat plan.",
+  },
+
+  why: {
+    title: "Hva gir en fremdriftsplan deg egentlig?",
+    lead: "Mange vet at de burde planlegge. Færre vet hva de faktisk får igjen for det.",
+    bullets: [
+      { title: "Oversikt", body: "Hva skal gjøres – og i hvilken rekkefølge." },
+      { title: "Forutsigbarhet", body: "Hva skjer nå, og hva kommer senere." },
+      { title: "Prioritering", body: "Hva er viktig, og hva kan vente." },
+      { title: "Fremdrift", body: "En tydelig følelse av å komme videre." },
+      { title: "Beslutningsgrunnlag", body: "Du ser konsekvensene før du tar valgene." },
+    ],
+    close:
+      "Progress hjelper deg å få dette på plass i praksis – ved å gjøre fremdrift synlig, forståelig og enkel å justere underveis.\n\nDet samme behovet dukker opp i mange ulike situasjoner. Under ser du noen typiske eksempler.",
+  },
+
+  tiles: [
+    {
+      title: "Prosjektledere",
+      body:
+        "Når flere aktiviteter henger sammen, og du må se rekkefølge, milepæler og frister, og kunne justere uten at alt faller fra hverandre.",
+    },
+    {
+      title: "Salgsrepresentanter",
+      body:
+        "Når et tilbud har mange del-løp: innhenting, oppfølging, avklaringer og interne frister, og du trenger oversikt på hva som haster nå og hva som venter.",
+    },
+    {
+      title: "Lærere",
+      body:
+        "Når undervisning, perioder og innleveringer skal henge sammen over tid, og du vil kunne flytte på ting uten å miste oversikten.",
+    },
+    {
+      title: "Elever og studenter",
+      body:
+        "Når du har flere oppgaver og frister samtidig, og trenger en plan som gjør arbeidsmengden håndterbar uke for uke.",
+    },
+    {
+      title: "Reisende",
+      body:
+        "Når en reise består av et tidsløp med transport, opphold og aktiviteter, og du vil se helheten og unngå «hull» i planen.",
+    },
+    {
+      title: "Privatpersoner",
+      body:
+        "Når noe skal gjennomføres i flere steg, oppussing, flytting eller arrangement, og du vil se hva som kommer først og hva som må bli ferdig til slutt.",
+    },
+  ],
+
+  tilesNote:
+    "Hvis det må planlegges, passer Progress.\nUansett rolle handler det om det samme: å se rekkefølgen, holde frister og gjøre fremdrift synlig.",
+
+  see: {
+    title: "Vil du se hvordan Progress faktisk fungerer?",
+    lead: "Progress er best når du ser det i bruk.",
+  },
+
+  cta: {
+    moreBtn: "Les mer om Progress",
+    appBtn: "Åpne Progress",
+    pricesBtn: "Se priser og lisens",
+  },
+},
 
 } as const;
 
