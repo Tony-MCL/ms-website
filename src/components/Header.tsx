@@ -44,7 +44,8 @@ const Header: React.FC = () => {
   }, []);
 
   const closeMenu = () => setOpen(false);
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
 
   const navExternal = useMemo(
     () => [
