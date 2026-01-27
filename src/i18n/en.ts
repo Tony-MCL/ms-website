@@ -477,6 +477,96 @@ legal: {
     },
   },
 },
+paywall: {
+  common: {
+    close: "Close",
+  },
+
+  trial: {
+    title: "Try Full version free for 10 days",
+    body: "Enter email and password to start the trial.",
+    cta: "Start trial",
+    success: "Trial started. You can now use full-version features for 10 days.",
+  },
+
+  buy: {
+    title: "Buy Full version license",
+    body: "Fill in the details once, choose license type, and proceed to checkout.",
+
+    licenseTypeTitle: "License type",
+    purchase: {
+      subscription: "Subscription",
+      oneTime: "One-time",
+    },
+
+    billingTitle: "With billing:",
+    billing: {
+      month: "Monthly",
+      year: "Yearly",
+    },
+
+    durationTitle: "Duration",
+    duration: {
+      oneMonth: "1 month",
+      oneYear: "1 year",
+    },
+
+    ctaCheckout: "Go to checkout",
+  },
+
+  buyer: {
+    company: "Company",
+    private: "Private",
+  },
+
+  fields: {
+    emailLabel: "Email address",
+    emailPlaceholder: "name@company.com",
+
+    passwordLabel: "Password",
+    passwordPlaceholder: "At least 6 characters",
+
+    orgNameLabel: "Company name",
+    orgNamePlaceholder: "Company Ltd",
+
+    orgNrLabel: "Org number",
+    orgNrPlaceholder: "9 digits",
+
+    contactNameLabel: "Contact person",
+    contactNamePlaceholder: "Jane Doe",
+
+    phoneLabel: "Phone",
+    phonePlaceholder: "+47 ...",
+
+    fullNameLabel: "Full name",
+    fullNamePlaceholder: "Jane Doe",
+
+    countryLabel: "Country",
+    countryPlaceholder: "Norway",
+  },
+
+  validation: {
+    invalidEmail: "Enter a valid email address.",
+    invalidPassword: "Password must be at least 6 characters.",
+  },
+
+  calc: {
+    price: "Price",
+    vat: "VAT",
+    total: "Price incl. VAT",
+    perMonth: "NOK/mo",
+    perYear: "NOK/yr",
+  },
+
+  errors: {
+    missingRequired: "Fill in all required fields.",
+    invalidOrgNr: "Org number looks wrong (9 digits).",
+    network: "Something went wrong. Check that the Worker endpoints are correct.",
+    wrongEndpoint:
+      "It looks like the checkout call is hitting the wrong address (not the Worker). Check VITE_PROGRESS_WORKER_BASE_URL.",
+    noCheckoutUrl: "Worker returned no checkout url (expected { url }).",
+  },
+},
 
 } as const;
 export default en;
