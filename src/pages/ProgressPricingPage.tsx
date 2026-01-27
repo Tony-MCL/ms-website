@@ -1,6 +1,5 @@
-// src/pages/ProgressPricingPage.tsx
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 import PaywallModal from "../components/PaywallModal";
 
@@ -12,8 +11,7 @@ function mclHref(path: string) {
 }
 
 // Worker base (kan overstyres via env)
-const DEFAULT_WORKER_BASE =
-  "https://gentle-wildflower-980e.morningcoffeelabs.workers.dev";
+const DEFAULT_WORKER_BASE = "https://gentle-wildflower-980e.morningcoffeelabs.workers.dev";
 const WORKER_BASE_URL =
   (import.meta as any).env?.VITE_PROGRESS_WORKER_BASE_URL || DEFAULT_WORKER_BASE;
 
@@ -25,57 +23,31 @@ const PRO_YEAR_EX_VAT = 1290;
 const VAT_RATE = 0.25;
 const CURRENCY = "NOK";
 
-function getParam(name: string) {
-  try {
-    const u = new URL(window.location.href);
-    return u.searchParams.get(name);
-  } catch {
-    return null;
-  }
-}
-
-function stripParams() {
-  try {
-    const u = new URL(window.location.href);
-    u.searchParams.delete("from");
-    u.searchParams.delete("refresh");
-    u.searchParams.delete("canceled");
-    window.history.replaceState({}, "", u.toString());
-  } catch {
-    // ignore
-  }
+function stripCheckoutParams(search: string) {
+  const sp = new URLSearchParams(search);
+  sp.delete("from");
+  sp.delete("success");
+  sp.delete("canceled");
+  const next = sp.toString();
+  return next ? `?${next}` : "";
 }
 
 const ProgressPricingPage: React.FC = () => {
   const { lang } = useI18n();
   const isNo = lang === "no";
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const sp = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const from = sp.get("from") || "";
+  const success = sp.get("success") === "1";
+  const canceled = sp.get("canceled") === "1";
+
+  const showCheckoutBanner = from === "checkout" && (success || canceled);
+
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallMode, setPaywallMode] = useState<"trial" | "buy">("buy");
-
-  // simple banner message after checkout cancel/success landing
-  const [banner, setBanner] = useState<string | null>(null);
-
-  useEffect(() => {
-    const from = getParam("from");
-    const refresh = getParam("refresh");
-    const canceled = getParam("canceled");
-
-    if (canceled === "1") {
-      setBanner(isNo ? "Betalingen ble avbrutt." : "Payment was canceled.");
-      stripParams();
-      return;
-    }
-
-    if (from === "checkout" || refresh === "1") {
-      setBanner(
-        isNo
-          ? "Betaling registrert. Åpne appen – status oppdateres automatisk."
-          : "Payment registered. Open the app — status updates automatically."
-      );
-      stripParams();
-    }
-  }, [isNo]);
 
   const title = isNo ? "Priser og lisens" : "Pricing & license";
   const lead = isNo
@@ -108,8 +80,8 @@ const ProgressPricingPage: React.FC = () => {
 
   const trialTitle = isNo ? "Prøv Pro gratis i 10 dager" : "Try Pro free for 10 days";
   const trialBody = isNo
-    ? "Du kan teste full Pro-funksjonalitet i 10 dager – helt gratis. Det eneste du trenger å gjøre er å registrere deg med e-postadresse."
-    : "You can test full Pro functionality for 10 days — completely free. The only thing you need is to register with an email address.";
+    ? "Du kan teste full Pro-funksjonalitet i 10 dager – helt gratis. Det eneste du trenger å gjøre er å registrere deg."
+    : "You can test full Pro functionality for 10 days — completely free. All you need to do is register.";
 
   const proWhatYouGetTitle = isNo ? "Dette får du i Pro" : "What you get in Pro";
   const proWhatYouGet = isNo
@@ -126,7 +98,6 @@ const ProgressPricingPage: React.FC = () => {
         "Cloud storage for multiple projects",
         "Print / PDF with no watermark",
         "Project export (save anywhere locally) — reopen later or share with others",
-        ".TSV export",
         ".TSV export",
         "License for professional use",
       ];
@@ -160,6 +131,87 @@ const ProgressPricingPage: React.FC = () => {
     setPaywallOpen(true);
   }
 
+  function dismissBanner() {
+    navigate({ pathname: location.pathname, search: stripCheckoutParams(location.search) }, { replace: true });
+  }
+
+  const banner = (() => {
+    if (!showCheckoutBanner) return null;
+
+    const baseStyle: React.CSSProperties = {
+      marginTop: "0.9rem",
+      padding: "0.75rem 0.9rem",
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,0.14)",
+      background: "rgba(255,255,255,0.06)",
+      display: "flex",
+      gap: 12,
+      alignItems: "center",
+      justifyContent: "space-between",
+      maxWidth: 980,
+    };
+
+    const msg = success
+      ? (isNo
+          ? "✅ Betaling registrert. Åpne appen – status oppdateres automatisk (evt. etter en refresh)."
+          : "✅ Payment registered. Open the app — status updates automatically (sometimes after a refresh).")
+      : (isNo
+          ? "↩️ Kjøpet ble avbrutt. Du er ikke oppgradert."
+          : "↩️ Checkout was canceled. You were not upgraded.");
+
+    return (
+      <div style={baseStyle}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontWeight: 800 }}>{msg}</div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Link className="hero-cta" to="/progress/app" style={{ textDecoration: "none" }}>
+              {openApp}
+            </Link>
+
+            {canceled && (
+              <button
+                type="button"
+                onClick={() => {
+                  dismissBanner();
+                  openBuy();
+                }}
+                style={{
+                  padding: "0.6rem 0.9rem",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "transparent",
+                  color: "inherit",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                }}
+              >
+                {isNo ? "Prøv igjen" : "Try again"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={dismissBanner}
+          aria-label={isNo ? "Lukk melding" : "Dismiss"}
+          style={{
+            padding: "0.45rem 0.65rem",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.18)",
+            background: "transparent",
+            color: "inherit",
+            cursor: "pointer",
+            flex: "0 0 auto",
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    );
+  })();
+
   return (
     <main className="page">
       <section className="fs-hero">
@@ -168,20 +220,7 @@ const ProgressPricingPage: React.FC = () => {
           {lead}
         </p>
 
-        {banner && (
-          <div
-            style={{
-              marginTop: "0.9rem",
-              padding: "0.75rem 0.9rem",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.18)",
-              background: "rgba(255,255,255,0.06)",
-              maxWidth: 980,
-            }}
-          >
-            {banner}
-          </div>
-        )}
+        {banner}
 
         <div
           style={{
@@ -196,17 +235,11 @@ const ProgressPricingPage: React.FC = () => {
             {openApp}
           </Link>
 
-          <a
-            href={mclHref("/kontakt")}
-            style={{ textDecoration: "underline", fontWeight: 600 }}
-          >
+          <a href={mclHref("/kontakt")} style={{ textDecoration: "underline", fontWeight: 600 }}>
             {contact}
           </a>
 
-          <Link
-            to="/progress"
-            style={{ textDecoration: "underline", fontWeight: 600 }}
-          >
+          <Link to="/progress" style={{ textDecoration: "underline", fontWeight: 600 }}>
             {back}
           </Link>
         </div>
@@ -218,9 +251,7 @@ const ProgressPricingPage: React.FC = () => {
           <h3 style={{ marginTop: 0 }}>{freeTitle}</h3>
           <p>{freeLead}</p>
 
-          <strong style={{ display: "block", marginTop: "0.75rem" }}>
-            {freeWhatYouGetTitle}
-          </strong>
+          <strong style={{ display: "block", marginTop: "0.75rem" }}>{freeWhatYouGetTitle}</strong>
 
           <ul style={{ marginTop: "0.6rem", paddingLeft: "1.25rem" }}>
             {freeWhatYouGet.map((x) => (
@@ -237,9 +268,7 @@ const ProgressPricingPage: React.FC = () => {
               borderTop: "1px solid rgba(255,255,255,0.10)",
             }}
           >
-            <strong style={{ display: "block", marginBottom: 6 }}>
-              {trialTitle}
-            </strong>
+            <strong style={{ display: "block", marginBottom: 6 }}>{trialTitle}</strong>
             <p style={{ margin: 0, opacity: 0.92 }}>{trialBody}</p>
 
             <div style={{ marginTop: "0.75rem" }}>
@@ -275,9 +304,7 @@ const ProgressPricingPage: React.FC = () => {
 
           <p style={{ marginTop: "0.75rem" }}>{proLead}</p>
 
-          <strong style={{ display: "block", marginTop: "0.75rem" }}>
-            {proWhatYouGetTitle}
-          </strong>
+          <strong style={{ display: "block", marginTop: "0.75rem" }}>{proWhatYouGetTitle}</strong>
 
           <ul style={{ marginTop: "0.6rem", paddingLeft: "1.25rem" }}>
             {proWhatYouGet.map((x) => (
@@ -292,10 +319,7 @@ const ProgressPricingPage: React.FC = () => {
               type="button"
               onClick={openBuy}
               className="hero-cta"
-              style={{
-                border: "none",
-                cursor: "pointer",
-              }}
+              style={{ border: "none", cursor: "pointer" }}
             >
               {buyLabel}
             </button>
