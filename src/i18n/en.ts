@@ -583,6 +583,47 @@ checkout: {
   secondaryTryAgain: "Try again",
   secondarySeePricing: "See pricing",
 },
+progressOverview: {
+  title: "How Progress works",
+  lead:
+    "Here’s the short explanation — with screenshots. Progress is built to make progress visible, easy to understand, and simple to adjust as things change.",
+  tryFreeCta: "Try Progress free",
+  closeLabel: "Close",
+  imageViewerLabel: "Image viewer",
+  screenshotLabel: "Screenshot",
+  missingTitle: "Missing image",
+  missingBodyPrefix: "Place the file at",
+  pairs: [
+    {
+      factTitle: "The table is the source of truth",
+      factBody:
+        "You enter activities, dates, and details in the table. The Gantt view shows the exact same rows — as time blocks. Fewer surprises, less manual work.",
+      imgAlt: "Screenshot: Table and Gantt plan",
+      imgCaption: "Table and Gantt stay aligned — same rows, same plan.",
+    },
+    {
+      factTitle: "A visual plan that’s easy to read",
+      factBody:
+        "You get a plan that’s easy to present to others — and easy to understand yourself. The goal is calm clarity, not more admin.",
+      imgAlt: "Screenshot: Overview and readability",
+      imgCaption: "Readability first: a calm layout that’s easy to share.",
+    },
+    {
+      factTitle: "Fast to adjust when reality changes",
+      factBody:
+        "Plans are never perfect. What matters is being able to update and adapt quickly without rebuilding everything from scratch.",
+      imgAlt: "Screenshot: Print / sharing",
+      imgCaption: "Built for sharing and printing — without the clutter.",
+    },
+    {
+      factTitle: "Built for sharing and printing",
+      factBody:
+        "A plan often has an audience. Progress is designed so you can present, share, and print without losing readability.",
+      imgAlt: "Screenshot: Details and flow",
+      imgCaption: "Details when you need them — without losing flow.",
+    },
+  ],
+},
 
 } as const;
 export default en;
