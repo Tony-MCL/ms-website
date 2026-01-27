@@ -2,13 +2,6 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 
-// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
-const MCL_ORIGIN = "https://morningcoffeelabs.no";
-function mclHref(path: string) {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${MCL_ORIGIN}/#${p}`;
-}
-
 type Pair = {
   factTitle: string;
   factBody: string;
@@ -29,8 +22,7 @@ const ProgressOverviewPage: React.FC = () => {
         title: "Slik fungerer Progress",
         lead:
           "Her er den korte forklaringen – med skjermbilder. Progress er laget for å gjøre fremdrift synlig, forståelig og enkel å justere underveis.",
-        backToProgress: "← Tilbake til Progress",
-        contactCta: "Kontakt oss →",
+        tryFreeCta: "Prøv Progress gratis",
         closeLabel: "Lukk",
         imageViewerLabel: "Bildevisning",
         screenshotLabel: "Skjermbilde",
@@ -70,14 +62,12 @@ const ProgressOverviewPage: React.FC = () => {
             imgCaption: "Detaljer når du trenger det – uten å miste flyten.",
           },
         ] as Pair[],
-        backToMcl: "← Tilbake til Morning Coffee Labs",
       }
     : {
         title: "How Progress works",
         lead:
           "Here’s the short explanation — with screenshots. Progress is built to make progress visible, easy to understand, and simple to adjust as things change.",
-        backToProgress: "← Back to Progress",
-        contactCta: "Contact us →",
+        tryFreeCta: "Try Progress free",
         closeLabel: "Close",
         imageViewerLabel: "Image viewer",
         screenshotLabel: "Screenshot",
@@ -117,7 +107,6 @@ const ProgressOverviewPage: React.FC = () => {
             imgCaption: "Details when you need them — without losing flow.",
           },
         ] as Pair[],
-        backToMcl: "← Back to Morning Coffee Labs",
       };
 
   // Lightbox state
@@ -143,16 +132,9 @@ const ProgressOverviewPage: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <Link className="hero-cta" to="/progress">
-            {copy.backToProgress}
+          <Link className="hero-cta" to="/progress/app">
+            {copy.tryFreeCta}
           </Link>
-
-          <a
-            href={mclHref("/kontakt")}
-            style={{ textDecoration: "underline", fontWeight: 600 }}
-          >
-            {copy.contactCta}
-          </a>
         </div>
       </section>
 
@@ -251,12 +233,6 @@ const ProgressOverviewPage: React.FC = () => {
             </React.Fragment>
           );
         })}
-
-        <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
-          <p style={{ marginBottom: 0 }}>
-            <a href={mclHref("/")}>{copy.backToMcl}</a>
-          </p>
-        </div>
       </section>
 
       {/* Lightbox */}
@@ -329,8 +305,6 @@ const ProgressOverviewPage: React.FC = () => {
                 flex: "1 1 auto",
                 minHeight: 0,
                 padding: "0.75rem",
-
-                // ✅ Viktig: scroll/contain uten "center"-triks som gjør at toppen blir utilgjengelig
                 overflow: "auto",
                 display: "flex",
                 alignItems: "flex-start",
@@ -368,14 +342,10 @@ const ProgressOverviewPage: React.FC = () => {
                   }
                   style={{
                     display: "block",
-
-                    // ✅ Skaler ned til å passe (ingen klipping)
                     maxWidth: "100%",
                     maxHeight: "100%",
                     width: "auto",
                     height: "auto",
-
-                    // ✅ Hold små bilder pent sentrert horisontalt
                     margin: "0 auto",
                   }}
                 />
