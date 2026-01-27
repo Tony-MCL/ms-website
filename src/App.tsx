@@ -8,6 +8,7 @@ import WatermarkLayer from "./components/WatermarkLayer";
 import ProgressPage from "./pages/ProgressPage";
 import ProgressOverviewPage from "./pages/ProgressOverviewPage";
 import ProgressPricingPage from "./pages/ProgressPricingPage";
+import ProgressCheckoutPage from "./pages/ProgressCheckoutPage";
 import ProgressAppPage from "./pages/ProgressAppPage";
 
 const App: React.FC = () => {
@@ -24,6 +25,7 @@ const App: React.FC = () => {
           <Route path="/progress/oversikt" element={<ProgressOverviewPage />} />
           <Route path="/progress/priser" element={<ProgressPricingPage />} />
           <Route path="/progress/app" element={<ProgressAppPage />} />
+          <Route path="/progress/checkout" element={<ProgressCheckoutPage />} />
 
           {/* Alt annet sendes til /progress */}
           <Route path="/" element={<Navigate to="/progress" replace />} />
