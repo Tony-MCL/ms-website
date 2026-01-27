@@ -396,6 +396,99 @@ legal: {
     },
   },
 },
+paywall: {
+  common: {
+    close: "Lukk",
+  },
+
+  trial: {
+    title: "Prøv Fullversjon gratis i 10 dager",
+    body: "Skriv inn e-post og passord for å starte prøveperioden.",
+    cta: "Start prøveperiode",
+    success:
+      "Prøveperiode er startet. Du kan nå bruke Fullversjon-funksjoner i 10 dager.",
+  },
+
+  buy: {
+    title: "Kjøp lisens for Fullversjon",
+    body: "Fyll inn informasjon én gang, velg lisenstype og gå til betaling.",
+
+    licenseTypeTitle: "Lisenstype",
+    purchase: {
+      subscription: "Abonnement",
+      oneTime: "Enkeltkjøp",
+    },
+
+    billingTitle: "Med betaling:",
+    billing: {
+      month: "Månedlig",
+      year: "Årlig",
+    },
+
+    durationTitle: "Varighet",
+    duration: {
+      oneMonth: "1 måned",
+      oneYear: "1 år",
+    },
+
+    ctaCheckout: "Gå til betaling",
+  },
+
+  buyer: {
+    company: "Bedrift",
+    private: "Privat",
+  },
+
+  fields: {
+    emailLabel: "E-postadresse",
+    emailPlaceholder: "navn@firma.no",
+
+    passwordLabel: "Passord",
+    passwordPlaceholder: "Minst 6 tegn",
+
+    orgNameLabel: "Firmanavn",
+    orgNamePlaceholder: "Firma AS",
+
+    orgNrLabel: "Org.nr",
+    orgNrPlaceholder: "9 siffer",
+
+    contactNameLabel: "Kontaktperson",
+    contactNamePlaceholder: "Ola Nordmann",
+
+    phoneLabel: "Telefon",
+    phonePlaceholder: "+47 ...",
+
+    fullNameLabel: "Navn",
+    fullNamePlaceholder: "Ola Nordmann",
+
+    countryLabel: "Land",
+    countryPlaceholder: "Norge",
+  },
+
+  validation: {
+    invalidEmail: "Skriv inn en gyldig e-postadresse.",
+    invalidPassword: "Passord må være minst 6 tegn.",
+  },
+
+  calc: {
+    price: "Pris",
+    vat: "Mva",
+    total: "Pris inkl. mva",
+    perMonth: "kr/mnd",
+    perYear: "kr/år",
+  },
+
+  errors: {
+    missingRequired: "Fyll inn alle påkrevde felt.",
+    invalidOrgNr: "Org.nr ser ikke riktig ut (9 siffer).",
+    network:
+      "Noe gikk galt. Sjekk at Worker-endepunktene er riktige.",
+    wrongEndpoint:
+      "Det ser ut som checkout-kallet går til feil adresse (ikke Worker). Sjekk VITE_PROGRESS_WORKER_BASE_URL.",
+    noCheckoutUrl:
+      "Worker returnerte ingen checkout-url (forventet { url }).",
+  },
+},
 
 } as const;
 
