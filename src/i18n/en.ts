@@ -624,6 +624,80 @@ progressOverview: {
     },
   ],
 },
+progress: {
+  hero: {
+    tagline: "Project planning without the noise.",
+    lead1:
+      "Progress is a simple tool for planning what actually needs to get done — without unnecessary features, complicated setup, or buzzwords.",
+    lead2:
+      "A schedule is about clarity, prioritization, and getting things over the finish line. It has always been a natural part of how people plan work — long before project management became a discipline with methods, tools, and terminology.",
+    lead3:
+      "When something needs to be built, learned, or delivered over time, the same need appears again and again: to see the whole picture, understand the sequence — and know when something is truly finished.",
+    lead4:
+      "Progress is built to support that need in practice — whether it’s a project, a semester, a sales process, or a personal plan.",
+  },
+
+  why: {
+    title: "What do you actually gain from a schedule?",
+    lead: "Many people know they should plan. Fewer can clearly describe what they get from it.",
+    bullets: [
+      { title: "Overview", body: "What needs doing — and in what order." },
+      { title: "Predictability", body: "What happens now, and what’s next." },
+      { title: "Priorities", body: "What matters most — and what can wait." },
+      { title: "Momentum", body: "A clear sense of progress." },
+      { title: "Better decisions", body: "See consequences before you commit." },
+    ],
+    close:
+      "Progress helps you put this into practice — by making progress visible, easy to understand, and simple to adjust as things change.\n\nThe same need shows up in many different situations. Below are a few typical examples.",
+  },
+
+  tiles: [
+    {
+      title: "Project managers",
+      body:
+        "When multiple activities depend on each other, and you need to see sequence, milestones, and deadlines — and adjust without everything falling apart.",
+    },
+    {
+      title: "Sales reps",
+      body:
+        "When a quote has many moving parts: sourcing, follow-ups, clarifications, and internal deadlines — and you need to know what matters now and what can wait.",
+    },
+    {
+      title: "Teachers",
+      body:
+        "When lessons, periods, and submissions need to connect over time — and you want to move things around without losing the overview.",
+    },
+    {
+      title: "Students",
+      body:
+        "When you have several assignments and deadlines at once — and need a plan that makes the workload manageable week by week.",
+    },
+    {
+      title: "Travelers",
+      body:
+        "When a trip is a timeline of transport, stays, and activities — and you want to see the whole plan and avoid gaps.",
+    },
+    {
+      title: "Personal planning",
+      body:
+        "When something happens in stages — renovations, moving, or events — and you want to see what comes first and what must be finished at the end.",
+    },
+  ],
+
+  tilesNote:
+    "If it needs planning — Progress fits.\nNo matter the role, it’s the same thing: see the sequence, keep deadlines, and make progress visible.",
+
+  see: {
+    title: "Want to see how Progress actually works?",
+    lead: "Progress is best when you see it in action.",
+  },
+
+  cta: {
+    moreBtn: "Learn how it works",
+    appBtn: "Open Progress",
+    pricesBtn: "Pricing & license",
+  },
+},
 
 } as const;
 export default en;
