@@ -2,13 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 
-// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
-const MCL_ORIGIN = "https://morningcoffeelabs.no";
-function mclHref(path: string) {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${MCL_ORIGIN}/#${p}`;
-}
-
 const ProgressPage: React.FC = () => {
   const { t, lang } = useI18n();
 
@@ -21,7 +14,7 @@ const ProgressPage: React.FC = () => {
           heroLead2:
             "En fremdriftsplan handler om oversikt, prioritering og å komme i mål. Den har alltid vært en naturlig del av hvordan mennesker planlegger arbeid – lenge før det fantes metoder, verktøy og begreper for prosjektstyring.",
           heroLead3:
-            "Når noe skal bygges, læres eller gjennomføres over tid, oppstår det samme behovet igjen og igjen: å se helheten, forstå rekkefølgen – og vite når noe faktisk er ferdig.",
+            "Når noe skal bygges, læres eller gjennomføres over tid, oppstår det samme behovet igjen og igjen: å se helheten, forstå rekkefølgen, og vite når noe faktisk er ferdig.",
           heroLead4:
             "Progress er laget for å støtte dette behovet i praksis – enten det er et prosjekt, et semester, et salgsarbeid eller en privat plan.",
 
@@ -42,45 +35,43 @@ const ProgressPage: React.FC = () => {
             {
               title: "Prosjektledere",
               body:
-                "Når flere aktiviteter henger sammen, og du må se rekkefølge, milepæler og frister – og kunne justere uten at alt faller fra hverandre.",
+                "Når flere aktiviteter henger sammen, og du må se rekkefølge, milepæler og frister, og kunne justere uten at alt faller fra hverandre.",
             },
             {
               title: "Salgsrepresentanter",
               body:
-                "Når et tilbud har mange del-løp: innhenting, oppfølging, avklaringer og interne frister – og du trenger oversikt på hva som haster nå og hva som venter.",
+                "Når et tilbud har mange del-løp: innhenting, oppfølging, avklaringer og interne frister, og du trenger oversikt på hva som haster nå og hva som venter.",
             },
             {
               title: "Lærere",
               body:
-                "Når undervisning, perioder og innleveringer skal henge sammen over tid – og du vil kunne flytte på ting uten å miste oversikten.",
+                "Når undervisning, perioder og innleveringer skal henge sammen over tid, og du vil kunne flytte på ting uten å miste oversikten.",
             },
             {
               title: "Elever og studenter",
               body:
-                "Når du har flere oppgaver og frister samtidig – og trenger en plan som gjør arbeidsmengden håndterbar uke for uke.",
+                "Når du har flere oppgaver og frister samtidig, og trenger en plan som gjør arbeidsmengden håndterbar uke for uke.",
             },
             {
               title: "Reisende",
               body:
-                "Når en reise består av et tidsløp med transport, opphold og aktiviteter – og du vil se helheten og unngå «hull» i planen.",
+                "Når en reise består av et tidsløp med transport, opphold og aktiviteter, og du vil se helheten og unngå «hull» i planen.",
             },
             {
               title: "Privatpersoner",
               body:
-                "Når noe skal gjennomføres i flere steg – oppussing, flytting eller arrangement – og du vil se hva som kommer først og hva som må bli ferdig til slutt.",
+                "Når noe skal gjennomføres i flere steg, oppussing, flytting eller arrangement, og du vil se hva som kommer først og hva som må bli ferdig til slutt.",
             },
           ],
           tilesNote:
-            "Hvis det må planlegges – passer Progress.\nUansett rolle handler det om det samme: å se rekkefølgen, holde frister og gjøre fremdrift synlig.",
+            "Hvis det må planlegges, passer Progress.\nUansett rolle handler det om det samme: å se rekkefølgen, holde frister og gjøre fremdrift synlig.",
 
           seeTitle: "Vil du se hvordan Progress faktisk fungerer?",
           seeLead: "Progress er best når du ser det i bruk.",
-          ctaShots: "Se skjermbilder",
-          ctaMore: "Les mer om hvordan Progress fungerer",
-          ctaPrices: "Se priser og lisens",
-          ctaApp: "Gå til Progress-appen",
-          backToMcl: "← Tilbake til Morning Coffee Labs",
-          contactCta: "Kontakt oss →",
+
+          ctaMoreBtn: "Les mer om Progress",
+          ctaAppBtn: "Åpne Progress",
+          ctaPricesBtn: "Se priser og lisens",
         }
       : {
           heroTagline: "Project planning without the noise.",
@@ -143,11 +134,10 @@ const ProgressPage: React.FC = () => {
 
           seeTitle: "Want to see how Progress actually works?",
           seeLead: "Progress is best when you see it in action.",
-          ctaMore: "Learn how it works",
-          ctaPrices: "Pricing & license",
-          ctaApp: "Open the Progress app",
-          backToMcl: "← Back to Morning Coffee Labs",
-          contactCta: "Contact us →",
+
+          ctaMoreBtn: "Learn how it works",
+          ctaAppBtn: "Open Progress",
+          ctaPricesBtn: "Pricing & license",
         };
 
   return (
@@ -165,6 +155,7 @@ const ProgressPage: React.FC = () => {
         <p style={{ maxWidth: 980, marginTop: "0.75rem" }}>{copy.heroLead3}</p>
         <p style={{ maxWidth: 980, marginTop: "0.75rem" }}>{copy.heroLead4}</p>
 
+        {/* CTA buttons (replaces badge + contact link) */}
         <div
           style={{
             display: "flex",
@@ -174,14 +165,17 @@ const ProgressPage: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <span className="badge">{t("progressPage.hero.badge")}</span>
+          <Link className="hero-cta" to="/progress/oversikt">
+            {copy.ctaMoreBtn}
+          </Link>
 
-          <a
-            href={mclHref("/kontakt")}
-            style={{ fontSize: "0.95rem", textDecoration: "underline" }}
-          >
-            {copy.contactCta}
-          </a>
+          <Link className="hero-cta" to="/progress/app">
+            {copy.ctaAppBtn}
+          </Link>
+
+          <Link className="hero-cta" to="/progress/priser">
+            {copy.ctaPricesBtn}
+          </Link>
         </div>
       </section>
 
@@ -220,47 +214,11 @@ const ProgressPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA (now purely content, no links) */}
       <section className="intro-grid two-columns">
         <div className="intro-card" style={{ gridColumn: "1 / -1" }}>
           <h3 style={{ marginTop: 0 }}>{copy.seeTitle}</h3>
           <p style={{ marginBottom: 0 }}>{copy.seeLead}</p>
-
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.8rem",
-              marginTop: "1rem",
-              alignItems: "center",
-            }}
-          >
-
-            <Link
-              to="/progress/oversikt"
-              style={{ textDecoration: "underline", fontWeight: 600 }}
-            >
-              {copy.ctaMore}
-            </Link>
-
-            <Link
-              to="/progress/priser"
-              style={{ textDecoration: "underline", fontWeight: 600 }}
-            >
-              {copy.ctaPrices}
-            </Link>
-
-            <Link
-              to="/progress/app"
-              style={{ textDecoration: "underline", fontWeight: 600 }}
-            >
-              {copy.ctaApp}
-            </Link>
-          </div>
-
-          <p style={{ marginTop: "1.25rem", marginBottom: 0 }}>
-            <a href={mclHref("/")}>{copy.backToMcl}</a>
-          </p>
         </div>
       </section>
     </main>
