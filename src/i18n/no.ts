@@ -489,6 +489,22 @@ paywall: {
       "Worker returnerte ingen checkout-url (forventet { url }).",
   },
 },
+checkout: {
+  titleSuccess: "Kjøp fullført 🎉",
+  titleCanceled: "Kjøp avbrutt",
+  titleDefault: "Status",
+
+  bodySuccess:
+    "Du er nå oppgradert til Pro. Hvis statusen ikke oppdateres umiddelbart, gjør en refresh i appen.",
+  bodyCanceled: "Kjøpet ble avbrutt. Du kan prøve igjen når du vil.",
+  bodyDefault: "Vi fant ingen status i lenken. Gå tilbake til priser og prøv igjen.",
+
+  primaryOpenProgress: "Åpne Progress",
+  primaryToPricing: "Til priser",
+
+  secondaryTryAgain: "Prøv igjen",
+  secondarySeePricing: "Se priser",
+},
 
 } as const;
 
