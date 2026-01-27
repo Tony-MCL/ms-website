@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { useI18n } from "../i18n/useI18n";
 
 type Mode = "trial" | "buy";
 type BillingPeriod = "month" | "year";
@@ -79,7 +80,7 @@ const PaywallModal: React.FC<Props> = ({
   vatRate,
   currency,
 }) => {
-  const isNo = lang === "no";
+  const { t } = useI18n();
 
   // ============================
   // ROUTES (Worker)
@@ -112,7 +113,8 @@ const PaywallModal: React.FC<Props> = ({
   const [country, setCountry] = useState("");
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("month");
-  const [purchaseType, setPurchaseType] = useState<PurchaseType>("subscription");
+  const [purchaseType, setPurchaseType] =
+    useState<PurchaseType>("subscription");
 
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -176,74 +178,6 @@ const PaywallModal: React.FC<Props> = ({
 
   if (!open) return null;
 
-  const t = {
-    close: isNo ? "Lukk" : "Close",
-
-    emailLabel: isNo ? "E-postadresse" : "Email address",
-    passwordLabel: isNo ? "Passord" : "Password",
-
-    buyerCompany: isNo ? "Bedrift" : "Company",
-    buyerPrivate: isNo ? "Privat" : "Private",
-
-    orgName: isNo ? "Firmanavn" : "Company name",
-    orgNr: isNo ? "Org.nr" : "Org number",
-    contactName: isNo ? "Kontaktperson" : "Contact person",
-    phone: isNo ? "Telefon" : "Phone",
-
-    fullName: isNo ? "Navn" : "Full name",
-    country: isNo ? "Land" : "Country",
-
-    // Titles
-    trialTitle: isNo ? "Prøv Fullversjon gratis i 10 dager" : "Try Full version free for 10 days",
-    trialBody: isNo
-      ? "Skriv inn e-post og passord for å starte prøveperioden."
-      : "Enter email and password to start the trial.",
-    startTrial: isNo ? "Start prøveperiode" : "Start trial",
-
-    buyTitle: isNo ? "Kjøp lisens for Fullversjon" : "Buy Full version license",
-    buyBody: isNo
-      ? "Fyll inn informasjon én gang, velg lisenstype og gå til betaling."
-      : "Fill in the details once, choose license type, and proceed to checkout.",
-
-    // Purchase controls
-    licenseType: isNo ? "Lisenstype" : "License type",
-    subscription: isNo ? "Abonnement" : "Subscription",
-    oneTime: isNo ? "Enkeltkjøp" : "One-time",
-
-    payCadence: isNo ? "Med betaling:" : "With billing:",
-    month: isNo ? "Månedlig" : "Monthly",
-    year: isNo ? "Årlig" : "Yearly",
-
-    duration: isNo ? "Varighet" : "Duration",
-    oneMonth: isNo ? "1 måned" : "1 month",
-    oneYear: isNo ? "1 år" : "1 year",
-
-    calcPrice: isNo ? "Pris" : "Price",
-    calcVat: isNo ? "Mva" : "VAT",
-    calcTotal: isNo ? "Pris inkl. mva" : "Price incl. VAT",
-
-    perMonth: isNo ? "kr/mnd" : "NOK/mo",
-    perYear: isNo ? "kr/år" : "NOK/yr",
-
-    goToCheckout: isNo ? "Gå til betaling" : "Go to checkout",
-
-    invalidEmail: isNo
-      ? "Skriv inn en gyldig e-postadresse."
-      : "Enter a valid email address.",
-    invalidPassword: isNo
-      ? "Passord må være minst 6 tegn."
-      : "Password must be at least 6 characters.",
-    missingCompany: isNo ? "Fyll inn alle påkrevde felt." : "Fill in all required fields.",
-    invalidOrgNr: isNo ? "Org.nr ser ikke riktig ut (9 siffer)." : "Org number looks wrong (9 digits).",
-    networkError: isNo
-      ? "Noe gikk galt. Sjekk at Worker-endepunktene er riktige."
-      : "Something went wrong. Check that the Worker endpoints are correct.",
-
-    wrongEndpoint: isNo
-      ? "Det ser ut som checkout-kallet går til feil adresse (ikke Worker). Sjekk VITE_PROGRESS_WORKER_BASE_URL."
-      : "It looks like the checkout call is hitting the wrong address (not the Worker). Check VITE_PROGRESS_WORKER_BASE_URL.",
-  };
-
   const emailOk = isValidEmail(email);
   const passwordOk = password.trim().length >= 6;
 
@@ -268,12 +202,14 @@ const PaywallModal: React.FC<Props> = ({
 
   const buyOk = mode === "buy" ? companyOk && privateOk : true;
 
-  const selectedExVat = billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
+  const selectedExVat =
+    billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
   const vatAmount = selectedExVat * vatRate;
   const selectedInclVat = selectedExVat + vatAmount;
 
-  const title = mode === "trial" ? t.trialTitle : t.buyTitle;
-  const sub = mode === "trial" ? t.trialBody : t.buyBody;
+  const title =
+    mode === "trial" ? t("paywall.trial.title") : t("paywall.buy.title");
+  const sub = mode === "trial" ? t("paywall.trial.body") : t("paywall.buy.body");
 
   async function ensureAuthAndGetIdToken() {
     const e = email.trim();
@@ -325,13 +261,9 @@ const PaywallModal: React.FC<Props> = ({
         throw new Error(txt || `HTTP ${res.status}`);
       }
 
-      setStatus(
-        isNo
-          ? "Prøveperiode er startet. Du kan nå bruke Fullversjon-funksjoner i 10 dager."
-          : "Trial started. You can now use full-version features for 10 days."
-      );
+      setStatus(t("paywall.trial.success"));
     } catch (e: any) {
-      setError(e?.message || t.networkError);
+      setError(e?.message || t("paywall.errors.network"));
     } finally {
       setBusy(false);
     }
@@ -347,8 +279,8 @@ const PaywallModal: React.FC<Props> = ({
     if (!passwordOk) return;
 
     if (!buyOk) {
-      if (buyerType === "company" && !orgNrOk) setError(t.invalidOrgNr);
-      else setError(t.missingCompany);
+      if (buyerType === "company" && !orgNrOk) setError(t("paywall.errors.invalidOrgNr"));
+      else setError(t("paywall.errors.missingRequired"));
       return;
     }
 
@@ -406,7 +338,7 @@ const PaywallModal: React.FC<Props> = ({
         const txt = await res.text().catch(() => "");
         const looksLikeHtml = /<html|<!doctype/i.test(txt);
         if (looksLikeHtml) {
-          throw new Error(`${t.wrongEndpoint}\nHTTP ${res.status} @ ${endpoint}`);
+          throw new Error(`${t("paywall.errors.wrongEndpoint")}\nHTTP ${res.status} @ ${endpoint}`);
         }
         throw new Error(txt || `HTTP ${res.status}`);
       }
@@ -415,16 +347,12 @@ const PaywallModal: React.FC<Props> = ({
       const url = data?.url || data?.checkoutUrl;
 
       if (!url || typeof url !== "string") {
-        throw new Error(
-          isNo
-            ? "Worker returnerte ingen checkout-url (forventet { url })."
-            : "Worker returned no checkout url (expected { url })."
-        );
+        throw new Error(t("paywall.errors.noCheckoutUrl"));
       }
 
       window.location.assign(url);
     } catch (e: any) {
-      setError(e?.message || t.networkError);
+      setError(e?.message || t("paywall.errors.network"));
     } finally {
       setBusy(false);
     }
@@ -563,7 +491,7 @@ const PaywallModal: React.FC<Props> = ({
               fontWeight: 600,
             }}
           >
-            {t.close}
+            {t("paywall.common.close")}
           </button>
         </div>
 
@@ -580,7 +508,7 @@ const PaywallModal: React.FC<Props> = ({
                     checked={buyerType === "company"}
                     onChange={() => setBuyerType("company")}
                   />
-                  {t.buyerCompany}
+                  {t("paywall.buyer.company")}
                 </label>
                 <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input
@@ -589,7 +517,7 @@ const PaywallModal: React.FC<Props> = ({
                     checked={buyerType === "private"}
                     onChange={() => setBuyerType("private")}
                   />
-                  {t.buyerPrivate}
+                  {t("paywall.buyer.private")}
                 </label>
               </div>
             </div>
@@ -605,34 +533,34 @@ const PaywallModal: React.FC<Props> = ({
             }}
           >
             <div>
-              <label style={labelStyle}>{t.emailLabel}</label>
+              <label style={labelStyle}>{t("paywall.fields.emailLabel")}</label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setEmailTouched(true)}
-                placeholder={isNo ? "navn@firma.no" : "name@company.com"}
+                placeholder={t("paywall.fields.emailPlaceholder")}
                 style={inputStyle(showEmailError)}
               />
               {showEmailError && (
                 <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                  {t.invalidEmail}
+                  {t("paywall.validation.invalidEmail")}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={labelStyle}>{t.passwordLabel}</label>
+              <label style={labelStyle}>{t("paywall.fields.passwordLabel")}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setPasswordTouched(true)}
-                placeholder={isNo ? "Minst 6 tegn" : "At least 6 characters"}
+                placeholder={t("paywall.fields.passwordPlaceholder")}
                 style={inputStyle(showPasswordError)}
               />
               {showPasswordError && (
                 <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                  {t.invalidPassword}
+                  {t("paywall.validation.invalidPassword")}
                 </div>
               )}
             </div>
@@ -649,41 +577,41 @@ const PaywallModal: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <label style={labelStyle}>{t.orgName}</label>
+                  <label style={labelStyle}>{t("paywall.fields.orgNameLabel")}</label>
                   <input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    placeholder={isNo ? "Firma AS" : "Company Ltd"}
+                    placeholder={t("paywall.fields.orgNamePlaceholder")}
                     style={inputStyle(false)}
                   />
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t.orgNr}</label>
+                  <label style={labelStyle}>{t("paywall.fields.orgNrLabel")}</label>
                   <input
                     value={orgNr}
                     onChange={(e) => setOrgNr(e.target.value)}
-                    placeholder={isNo ? "9 siffer" : "9 digits"}
+                    placeholder={t("paywall.fields.orgNrPlaceholder")}
                     style={inputStyle(!orgNrOk)}
                   />
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t.contactName}</label>
+                  <label style={labelStyle}>{t("paywall.fields.contactNameLabel")}</label>
                   <input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
+                    placeholder={t("paywall.fields.contactNamePlaceholder")}
                     style={inputStyle(false)}
                   />
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t.phone}</label>
+                  <label style={labelStyle}>{t("paywall.fields.phoneLabel")}</label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder={isNo ? "+47 ..." : "+47 ..."}
+                    placeholder={t("paywall.fields.phonePlaceholder")}
                     style={inputStyle(false)}
                   />
                 </div>
@@ -701,31 +629,31 @@ const PaywallModal: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <label style={labelStyle}>{t.fullName}</label>
+                  <label style={labelStyle}>{t("paywall.fields.fullNameLabel")}</label>
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
+                    placeholder={t("paywall.fields.fullNamePlaceholder")}
                     style={inputStyle(false)}
                   />
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t.country}</label>
+                  <label style={labelStyle}>{t("paywall.fields.countryLabel")}</label>
                   <input
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    placeholder={isNo ? "Norge" : "Norway"}
+                    placeholder={t("paywall.fields.countryPlaceholder")}
                     style={inputStyle(false)}
                   />
                 </div>
 
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>{t.phone}</label>
+                  <label style={labelStyle}>{t("paywall.fields.phoneLabel")}</label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder={isNo ? "+47 ..." : "+47 ..."}
+                    placeholder={t("paywall.fields.phonePlaceholder")}
                     style={inputStyle(false)}
                   />
                 </div>
@@ -734,8 +662,13 @@ const PaywallModal: React.FC<Props> = ({
           )}
 
           {mode === "trial" ? (
-            <button type="button" onClick={startTrial} disabled={busy} style={actionBtnStyle}>
-              {t.startTrial}
+            <button
+              type="button"
+              onClick={startTrial}
+              disabled={busy}
+              style={actionBtnStyle}
+            >
+              {t("paywall.trial.cta")}
             </button>
           ) : (
             <>
@@ -750,7 +683,7 @@ const PaywallModal: React.FC<Props> = ({
                 {/* LEFT */}
                 <div>
                   <div style={{ marginBottom: "0.95rem" }}>
-                    <div style={sectionTitleStyle}>{t.licenseType}</div>
+                    <div style={sectionTitleStyle}>{t("paywall.buy.licenseTypeTitle")}</div>
                     <div style={radioRowStyle}>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <input
@@ -759,7 +692,7 @@ const PaywallModal: React.FC<Props> = ({
                           checked={purchaseType === "subscription"}
                           onChange={() => setPurchaseType("subscription")}
                         />
-                        {t.subscription}
+                        {t("paywall.buy.purchase.subscription")}
                       </label>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <input
@@ -768,14 +701,14 @@ const PaywallModal: React.FC<Props> = ({
                           checked={purchaseType === "one_time"}
                           onChange={() => setPurchaseType("one_time")}
                         />
-                        {t.oneTime}
+                        {t("paywall.buy.purchase.oneTime")}
                       </label>
                     </div>
                   </div>
 
                   {purchaseType === "subscription" ? (
                     <div>
-                      <div style={sectionTitleStyle}>{t.payCadence}</div>
+                      <div style={sectionTitleStyle}>{t("paywall.buy.billingTitle")}</div>
                       <div style={radioRowStyle}>
                         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <input
@@ -784,7 +717,7 @@ const PaywallModal: React.FC<Props> = ({
                             checked={billingPeriod === "month"}
                             onChange={() => setBillingPeriod("month")}
                           />
-                          {t.month}
+                          {t("paywall.buy.billing.month")}
                         </label>
                         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <input
@@ -793,13 +726,13 @@ const PaywallModal: React.FC<Props> = ({
                             checked={billingPeriod === "year"}
                             onChange={() => setBillingPeriod("year")}
                           />
-                          {t.year}
+                          {t("paywall.buy.billing.year")}
                         </label>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <div style={sectionTitleStyle}>{t.duration}</div>
+                      <div style={sectionTitleStyle}>{t("paywall.buy.durationTitle")}</div>
                       <div style={radioRowStyle}>
                         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <input
@@ -808,7 +741,7 @@ const PaywallModal: React.FC<Props> = ({
                             checked={billingPeriod === "month"}
                             onChange={() => setBillingPeriod("month")}
                           />
-                          {t.oneMonth}
+                          {t("paywall.buy.duration.oneMonth")}
                         </label>
                         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           <input
@@ -817,7 +750,7 @@ const PaywallModal: React.FC<Props> = ({
                             checked={billingPeriod === "year"}
                             onChange={() => setBillingPeriod("year")}
                           />
-                          {t.oneYear}
+                          {t("paywall.buy.duration.oneYear")}
                         </label>
                       </div>
                     </div>
@@ -843,33 +776,47 @@ const PaywallModal: React.FC<Props> = ({
                       fontSize: 13.5,
                     }}
                   >
-                    <div style={{ fontWeight: 600 }}>{t.calcPrice}:</div>
+                    <div style={{ fontWeight: 600 }}>{t("paywall.calc.price")}:</div>
                     <div style={{ textAlign: "right", fontWeight: 650 }}>
                       {formatKr(selectedExVat, lang)}
                     </div>
 
-                    <div style={{ fontWeight: 600 }}>{t.calcVat}:</div>
+                    <div style={{ fontWeight: 600 }}>{t("paywall.calc.vat")}:</div>
                     <div style={{ textAlign: "right", fontWeight: 650 }}>
                       {formatKr(vatAmount, lang)}
                     </div>
 
-                    <div style={{ fontWeight: 650 }}>{t.calcTotal}:</div>
+                    <div style={{ fontWeight: 650 }}>{t("paywall.calc.total")}:</div>
                     <div style={{ textAlign: "right", fontWeight: 700 }}>
                       {formatKr(selectedInclVat, lang)}
                       {purchaseType === "subscription" &&
-                        (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
+                        (billingPeriod === "year"
+                          ? ` ${t("paywall.calc.perYear")}`
+                          : ` ${t("paywall.calc.perMonth")}`)}
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, color: "var(--mcl-text-dim)" }}>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      opacity: 0.75,
+                      color: "var(--mcl-text-dim)",
+                    }}
+                  >
                     {currency}
                   </div>
                 </div>
               </div>
 
               <div style={{ marginTop: "1.1rem" }}>
-                <button type="button" onClick={goToCheckout} disabled={busy} style={actionBtnStyle}>
-                  {t.goToCheckout}
+                <button
+                  type="button"
+                  onClick={goToCheckout}
+                  disabled={busy}
+                  style={actionBtnStyle}
+                >
+                  {t("paywall.buy.ctaCheckout")}
                 </button>
               </div>
             </>
