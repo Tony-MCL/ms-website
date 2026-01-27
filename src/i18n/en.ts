@@ -567,6 +567,22 @@ paywall: {
     noCheckoutUrl: "Worker returned no checkout url (expected { url }).",
   },
 },
+checkout: {
+  titleSuccess: "Purchase completed 🎉",
+  titleCanceled: "Purchase canceled",
+  titleDefault: "Status",
+
+  bodySuccess:
+    "You are now upgraded to Pro. If the status doesn’t update immediately, refresh the app.",
+  bodyCanceled: "The purchase was canceled. You can try again anytime.",
+  bodyDefault: "No status found in the link. Go back to pricing and try again.",
+
+  primaryOpenProgress: "Open Progress",
+  primaryToPricing: "Back to pricing",
+
+  secondaryTryAgain: "Try again",
+  secondarySeePricing: "See pricing",
+},
 
 } as const;
 export default en;
