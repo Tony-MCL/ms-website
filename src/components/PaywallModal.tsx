@@ -1,3 +1,4 @@
+// src/components/PaywallModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   createUserWithEmailAndPassword,
@@ -57,6 +58,16 @@ function isProbablyOrgNr(s: string) {
   return !x || /^\d{9}$/.test(x);
 }
 
+function normalizePublicHashBase(raw: string) {
+  const base = String(raw || "").trim();
+  if (!base) return "";
+  // Sørg for trailing slash
+  const withSlash = base.replace(/\/+$/, "/");
+  // Sørg for "#/" for HashRouter
+  if (withSlash.includes("#/")) return withSlash;
+  return withSlash.replace(/\/+$/, "") + "/#/";
+}
+
 const PaywallModal: React.FC<Props> = ({
   open,
   mode,
@@ -77,7 +88,8 @@ const PaywallModal: React.FC<Props> = ({
   const ROUTE_CHECKOUT_CREATE = "/api/checkout/create";
   // ============================
 
-  const base = useMemo(() => clampUrlBase(workerBaseUrl), [workerBaseUrl]);
+  // ✅ Worker base URL (IKKE bland med public site url)
+  const workerBase = useMemo(() => clampUrlBase(workerBaseUrl), [workerBaseUrl]);
 
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -219,13 +231,21 @@ const PaywallModal: React.FC<Props> = ({
 
     goToCheckout: isNo ? "Gå til betaling" : "Go to checkout",
 
-    invalidEmail: isNo ? "Skriv inn en gyldig e-postadresse." : "Enter a valid email address.",
-    invalidPassword: isNo ? "Passord må være minst 6 tegn." : "Password must be at least 6 characters.",
+    invalidEmail: isNo
+      ? "Skriv inn en gyldig e-postadresse."
+      : "Enter a valid email address.",
+    invalidPassword: isNo
+      ? "Passord må være minst 6 tegn."
+      : "Password must be at least 6 characters.",
     missingCompany: isNo ? "Fyll inn alle påkrevde felt." : "Fill in all required fields.",
     invalidOrgNr: isNo ? "Org.nr ser ikke riktig ut (9 siffer)." : "Org number looks wrong (9 digits).",
     networkError: isNo
       ? "Noe gikk galt. Sjekk at Worker-endepunktene er riktige."
       : "Something went wrong. Check that the Worker endpoints are correct.",
+
+    wrongEndpoint: isNo
+      ? "Det ser ut som checkout-kallet går til feil adresse (ikke Worker). Sjekk VITE_PROGRESS_WORKER_BASE_URL."
+      : "It looks like the checkout call is hitting the wrong address (not the Worker). Check VITE_PROGRESS_WORKER_BASE_URL.",
   };
 
   const emailOk = isValidEmail(email);
@@ -248,9 +268,7 @@ const PaywallModal: React.FC<Props> = ({
       : true;
 
   const privateOk =
-    buyerType === "private"
-      ? Boolean(fullName.trim() && country.trim())
-      : true;
+    buyerType === "private" ? Boolean(fullName.trim() && country.trim()) : true;
 
   const buyOk = mode === "buy" ? companyOk && privateOk : true;
 
@@ -293,7 +311,8 @@ const PaywallModal: React.FC<Props> = ({
     try {
       const idToken = await ensureAuthAndGetIdToken();
 
-      const res = await fetch(`${base}${ROUTE_TRIAL_START}`, {
+      const endpoint = `${workerBase}${ROUTE_TRIAL_START}`;
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -341,18 +360,12 @@ const PaywallModal: React.FC<Props> = ({
     try {
       const idToken = await ensureAuthAndGetIdToken();
 
-      // ✅ Kontrollerte retur-URLer (Step 1)
-      const rawBase =
+      // ✅ Kontrollerte retur-URLer (HashRouter)
+      const rawPublic =
         (import.meta as any).env?.VITE_PUBLIC_SITE_URL ||
         `${window.location.origin}${window.location.pathname}`;
-      
-      const base = String(rawBase).trim();
-      
-      // Normaliser til …/#/ (HashRouter)
-      const publicBase = base.includes("#/")
-        ? base.replace(/\/+$/, "/")
-        : base.replace(/\/+$/, "") + "/#/";
-      
+
+      const publicBase = normalizePublicHashBase(rawPublic);
       const successUrl = `${publicBase}progress/priser?from=checkout&success=1`;
       const cancelUrl = `${publicBase}progress/priser?from=checkout&canceled=1`;
 
@@ -372,9 +385,9 @@ const PaywallModal: React.FC<Props> = ({
         payload.orgNr = normalizeOrgNr(orgNr);
         payload.contactName = contactName.trim();
         payload.phone = phone.trim();
+        payload.buyerType = "company";
       } else {
-        // Privatkjøp: send minimum, Worker kan opprette "Personal" org i bakgrunnen
-        payload.orgName = fullName.trim();
+        payload.orgName = fullName.trim(); // “personal org name”
         payload.orgNr = null;
         payload.contactName = fullName.trim();
         payload.phone = phone.trim() || null;
@@ -382,7 +395,9 @@ const PaywallModal: React.FC<Props> = ({
         payload.buyerType = "private";
       }
 
-      const res = await fetch(`${base}${ROUTE_CHECKOUT_CREATE}`, {
+      // ✅ Checkout create mot Worker
+      const endpoint = `${workerBase}${ROUTE_CHECKOUT_CREATE}`;
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -393,6 +408,11 @@ const PaywallModal: React.FC<Props> = ({
 
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
+        // Hvis vi får HTML tilbake, har vi nesten garantert truffet feil endpoint
+        const looksLikeHtml = /<html|<!doctype/i.test(txt);
+        if (looksLikeHtml) {
+          throw new Error(`${t.wrongEndpoint}\nHTTP ${res.status} @ ${endpoint}`);
+        }
         throw new Error(txt || `HTTP ${res.status}`);
       }
 
@@ -425,10 +445,14 @@ const PaywallModal: React.FC<Props> = ({
     ? "0 18px 60px rgba(0,0,0,0.55)"
     : "0 18px 60px rgba(0,0,0,0.20)";
 
-  const line = isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.10)";
+  const line = isDark
+    ? "1px solid rgba(255,255,255,0.12)"
+    : "1px solid rgba(0,0,0,0.10)";
 
   const inputBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
-  const chipBorder = isDark ? "1px solid rgba(255,255,255,0.20)" : "1px solid rgba(0,0,0,0.16)";
+  const chipBorder = isDark
+    ? "1px solid rgba(255,255,255,0.20)"
+    : "1px solid rgba(0,0,0,0.16)";
 
   return (
     <div
@@ -480,7 +504,15 @@ const PaywallModal: React.FC<Props> = ({
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <strong style={{ fontSize: 16 }}>{title}</strong>
-            <div style={{ fontSize: 13, opacity: 0.8, color: "var(--mcl-text-dim)" }}>{sub}</div>
+            <div
+              style={{
+                fontSize: 13,
+                opacity: 0.8,
+                color: "var(--mcl-text-dim)",
+              }}
+            >
+              {sub}
+            </div>
           </div>
 
           <button
@@ -505,7 +537,9 @@ const PaywallModal: React.FC<Props> = ({
         <div style={{ padding: "1rem", overflow: "auto" }}>
           {/* Email */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.emailLabel}</label>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+              {t.emailLabel}
+            </label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -515,19 +549,36 @@ const PaywallModal: React.FC<Props> = ({
                 width: "100%",
                 padding: "0.7rem 0.8rem",
                 borderRadius: 12,
-                border: showEmailError ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+                border: showEmailError
+                  ? "1px solid rgba(255,80,80,0.75)"
+                  : chipBorder,
                 background: inputBg,
                 color: "inherit",
                 outline: "none",
               }}
             />
-            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, color: "var(--mcl-text-dim)" }}>{t.emailHelp}</div>
-            {showEmailError && <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>{t.invalidEmail}</div>}
+            <div
+              style={{
+                fontSize: 13,
+                opacity: 0.8,
+                marginTop: 6,
+                color: "var(--mcl-text-dim)",
+              }}
+            >
+              {t.emailHelp}
+            </div>
+            {showEmailError && (
+              <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
+                {t.invalidEmail}
+              </div>
+            )}
           </div>
 
           {/* Password */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.passwordLabel}</label>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+              {t.passwordLabel}
+            </label>
             <input
               type="password"
               value={password}
@@ -538,20 +589,37 @@ const PaywallModal: React.FC<Props> = ({
                 width: "100%",
                 padding: "0.7rem 0.8rem",
                 borderRadius: 12,
-                border: showPasswordError ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+                border: showPasswordError
+                  ? "1px solid rgba(255,80,80,0.75)"
+                  : chipBorder,
                 background: inputBg,
                 color: "inherit",
                 outline: "none",
               }}
             />
-            <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, color: "var(--mcl-text-dim)" }}>{t.passwordHelp}</div>
-            {showPasswordError && <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>{t.invalidPassword}</div>}
+            <div
+              style={{
+                fontSize: 13,
+                opacity: 0.8,
+                marginTop: 6,
+                color: "var(--mcl-text-dim)",
+              }}
+            >
+              {t.passwordHelp}
+            </div>
+            {showPasswordError && (
+              <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
+                {t.invalidPassword}
+              </div>
+            )}
           </div>
 
           {/* Buyer toggle (kun ved kjøp) */}
           {mode === "buy" && (
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.buyerTypeLabel}</div>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                {t.buyerTypeLabel}
+              </div>
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                 <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <input
@@ -580,9 +648,17 @@ const PaywallModal: React.FC<Props> = ({
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.orgTitle}</div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
+                }}
+              >
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgName}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.orgName}
+                  </label>
                   <input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
@@ -600,7 +676,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNr}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.orgNr}
+                  </label>
                   <input
                     value={orgNr}
                     onChange={(e) => setOrgNr(e.target.value)}
@@ -618,7 +696,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.contactName}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.contactName}
+                  </label>
                   <input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
@@ -636,7 +716,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phone}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.phone}
+                  </label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -660,9 +742,17 @@ const PaywallModal: React.FC<Props> = ({
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.privateTitle}</div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
+                }}
+              >
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.fullName}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.fullName}
+                  </label>
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -680,7 +770,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.country}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.country}
+                  </label>
                   <input
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
@@ -698,7 +790,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phone}</label>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
+                    {t.phone}
+                  </label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -748,7 +842,9 @@ const PaywallModal: React.FC<Props> = ({
                 {/* LEFT */}
                 <div>
                   <div style={{ marginBottom: "0.9rem" }}>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.periodLabel}</div>
+                    <div style={{ fontWeight: 800, marginBottom: 6 }}>
+                      {t.periodLabel}
+                    </div>
                     <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                       <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <input
@@ -815,10 +911,14 @@ const PaywallModal: React.FC<Props> = ({
                     }}
                   >
                     <div style={{ fontWeight: 800 }}>{t.calcPrice}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 800 }}>{formatKr(selectedExVat, lang)}</div>
+                    <div style={{ textAlign: "right", fontWeight: 800 }}>
+                      {formatKr(selectedExVat, lang)}
+                    </div>
 
                     <div style={{ fontWeight: 800 }}>{t.calcVat}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 800 }}>{formatKr(vatAmount, lang)}</div>
+                    <div style={{ textAlign: "right", fontWeight: 800 }}>
+                      {formatKr(vatAmount, lang)}
+                    </div>
 
                     <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
                     <div style={{ textAlign: "right", fontWeight: 900 }}>
@@ -866,7 +966,7 @@ const PaywallModal: React.FC<Props> = ({
                 opacity: 0.98,
               }}
             >
-              {error ? <div>{error}</div> : <div>{status}</div>}
+              {error ? <div style={{ whiteSpace: "pre-wrap" }}>{error}</div> : <div>{status}</div>}
             </div>
           )}
         </div>
