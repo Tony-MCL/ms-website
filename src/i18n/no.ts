@@ -505,6 +505,47 @@ checkout: {
   secondaryTryAgain: "Prøv igjen",
   secondarySeePricing: "Se priser",
 },
+progressOverview: {
+  title: "Slik fungerer Progress",
+  lead:
+    "Her er den korte forklaringen – med skjermbilder. Progress er laget for å gjøre fremdrift synlig, forståelig og enkel å justere underveis.",
+  tryFreeCta: "Prøv Progress gratis",
+  closeLabel: "Lukk",
+  imageViewerLabel: "Bildevisning",
+  screenshotLabel: "Skjermbilde",
+  missingTitle: "Mangler bilde",
+  missingBodyPrefix: "Legg filen i",
+  pairs: [
+    {
+      factTitle: "Tabellen er kilden til sannhet",
+      factBody:
+        "Du skriver inn aktivitet, datoer og informasjon i tabellen. Gantt-visningen viser nøyaktig de samme radene – som tidsblokker. Det betyr færre overraskelser og mindre manuelt arbeid.",
+      imgAlt: "Skjermbilde: Plan i tabell og Gantt",
+      imgCaption: "Tabell og Gantt henger sammen – samme rader, samme plan.",
+    },
+    {
+      factTitle: "Visuell plan som er lett å lese",
+      factBody:
+        "Du får en plan som er enkel å presentere for andre – og enkel å forstå for deg selv. Målet er ro og oversikt, ikke mer administrasjon.",
+      imgAlt: "Skjermbilde: Oversikt og lesbarhet",
+      imgCaption: "Lesbarhet først: rolig layout som er enkel å dele.",
+    },
+    {
+      factTitle: "Rask å endre når virkeligheten endrer seg",
+      factBody:
+        "Planer blir aldri perfekte. Det viktige er at det går fort å oppdatere og justere, uten at du må “redesigne” alt fra bunnen av.",
+      imgAlt: "Skjermbilde: Utskrift / deling",
+      imgCaption: "Bygget for deling og utskrift – uten at det blir rot.",
+    },
+    {
+      factTitle: "Bygget for utskrift og deling",
+      factBody:
+        "En plan har ofte en mottaker. Progress er laget med tanke på at du skal kunne vise, dele og skrive ut – uten å miste lesbarhet.",
+      imgAlt: "Skjermbilde: Detaljer og flyt",
+      imgCaption: "Detaljer når du trenger det – uten å miste flyten.",
+    },
+  ],
+},
 
 } as const;
 
