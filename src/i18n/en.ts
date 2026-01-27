@@ -23,6 +23,11 @@ const en = {
       en: "EN",
       aria: "Switch language",
     },
+    logoAlt: "Morning Coffee Labs",
+    mobileMenu: {
+      open: "Open menu",
+      close: "Close menu",
+    },
   },
 
   footer: {
