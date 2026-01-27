@@ -1,4 +1,3 @@
-// src/components/PaywallModal.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   createUserWithEmailAndPassword,
@@ -9,7 +8,6 @@ import { auth } from "../firebase/firebase";
 type Mode = "trial" | "buy";
 type BillingPeriod = "month" | "year";
 type PurchaseType = "subscription" | "one_time";
-type CustomerType = "company" | "individual";
 
 type Props = {
   open: boolean;
@@ -55,17 +53,8 @@ function normalizeOrgNr(s: string) {
 
 function isProbablyOrgNr(s: string) {
   const x = normalizeOrgNr(s);
-  // enkel sjekk (9 siffer) – ikke “hard” validering
+  // veldig enkel sjekk (9 siffer) – ikke “hard” validering
   return !x || /^\d{9}$/.test(x);
-}
-
-function getQueryParam(name: string) {
-  try {
-    const u = new URL(window.location.href);
-    return u.searchParams.get(name);
-  } catch {
-    return null;
-  }
 }
 
 const PaywallModal: React.FC<Props> = ({
@@ -82,7 +71,7 @@ const PaywallModal: React.FC<Props> = ({
   const isNo = lang === "no";
 
   // ============================
-  // JUSTER ROUTES HER VED BEHOV
+  // ROUTES (Worker)
   // ============================
   const ROUTE_TRIAL_START = "/api/trial/start";
   const ROUTE_CHECKOUT_CREATE = "/api/checkout/create";
@@ -96,18 +85,19 @@ const PaywallModal: React.FC<Props> = ({
   const [password, setPassword] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
 
-  // Buy: company vs individual
-  const [customerType, setCustomerType] = useState<CustomerType>("company");
+  // “Company / private” toggle (kun i buy)
+  type BuyerType = "company" | "private";
+  const [buyerType, setBuyerType] = useState<BuyerType>("company");
 
-  // Person / Company fields (buy)
-  const [fullName, setFullName] = useState("");
+  // Company fields
   const [orgName, setOrgName] = useState("");
   const [orgNr, setOrgNr] = useState("");
-
-  // Common (buy) – optional
-  const [country, setCountry] = useState("NO");
   const [contactName, setContactName] = useState("");
   const [phone, setPhone] = useState("");
+
+  // Private fields
+  const [fullName, setFullName] = useState("");
+  const [country, setCountry] = useState("");
 
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("month");
   const [purchaseType, setPurchaseType] = useState<PurchaseType>("subscription");
@@ -143,25 +133,24 @@ const PaywallModal: React.FC<Props> = ({
     setEmailTouched(false);
     setPasswordTouched(false);
 
-    // Ikke nullstill epost/passord automatisk
     if (mode === "trial") {
-      // Trial har ikke kjøpsfelter
-      setCustomerType("company");
-      setFullName("");
+      // rydd litt
+      setBuyerType("company");
       setOrgName("");
       setOrgNr("");
-      setCountry("NO");
       setContactName("");
       setPhone("");
+      setFullName("");
+      setCountry("");
     }
 
     if (mode === "buy") {
       setBillingPeriod("month");
       setPurchaseType("subscription");
-      // behold customerType osv mellom åpninger om du vil – men vi setter safe defaults
-      if (!country) setCountry("NO");
+      // default company først
+      setBuyerType("company");
     }
-  }, [open, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, mode]);
 
   // Close on ESC
   useEffect(() => {
@@ -188,36 +177,30 @@ const PaywallModal: React.FC<Props> = ({
       ? "Brukes til å opprette/logge inn brukeren før trial/kjøp."
       : "Used to create/sign in the user before trial/purchase.",
 
-    buyCustomerType: isNo ? "Kjøper som" : "Buying as",
-    company: isNo ? "Bedrift" : "Company",
-    individual: isNo ? "Privat" : "Individual",
+    buyerTypeLabel: isNo ? "Hvem kjøper?" : "Who is buying?",
+    buyerCompany: isNo ? "Bedrift" : "Company",
+    buyerPrivate: isNo ? "Privat" : "Private",
 
-    detailsTitle: isNo ? "Opplysninger" : "Details",
-    fullName: isNo ? "Navn" : "Full name",
-    orgTitle: isNo ? "Firmanavn" : "Company name",
+    orgTitle: isNo ? "Firmainfo" : "Company info",
+    orgName: isNo ? "Firmanavn" : "Company name",
     orgNr: isNo ? "Org.nr" : "Org number",
-    country: isNo ? "Land" : "Country",
-
-    contactOptionalTitle: isNo ? "Kontakt (valgfritt)" : "Contact (optional)",
     contactName: isNo ? "Kontaktperson" : "Contact person",
     phone: isNo ? "Telefon" : "Phone",
+
+    privateTitle: isNo ? "Privatinfo" : "Private info",
+    fullName: isNo ? "Navn" : "Full name",
+    country: isNo ? "Land" : "Country",
 
     trialTitle: isNo ? "Prøv Pro gratis i 10 dager" : "Try Pro free for 10 days",
     trialBody: isNo
       ? "Full Pro-funksjonalitet i 10 dager. Skriv inn e-post og passord for å starte."
       : "Full Pro functionality for 10 days. Enter email and password to start.",
     startTrial: isNo ? "Start 10-dagers trial" : "Start 10-day trial",
-    trialOk: isNo
-      ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
-      : "Trial started. You can now use Pro features for 10 days.",
-    openApp: isNo ? "Åpne Progress-appen" : "Open the Progress app",
 
     buyTitle: isNo ? "Kjøp Pro-lisens" : "Buy Pro license",
     buyBody: isNo
-      ? "Velg privat eller bedrift, fyll inn det som trengs, og gå til betaling."
-      : "Choose individual or company, fill what’s required, and proceed to checkout.",
-
-    requiredNote: isNo ? "* Påkrevd" : "* Required",
+      ? "Fyll inn informasjon én gang, velg betalingsperiode og kjøpstype, og gå til betaling."
+      : "Fill in the details once, choose billing period and purchase type, and proceed to checkout.",
 
     periodLabel: isNo ? "Betalingsperiode" : "Billing period",
     month: isNo ? "Månedlig" : "Monthly",
@@ -238,7 +221,7 @@ const PaywallModal: React.FC<Props> = ({
 
     invalidEmail: isNo ? "Skriv inn en gyldig e-postadresse." : "Enter a valid email address.",
     invalidPassword: isNo ? "Passord må være minst 6 tegn." : "Password must be at least 6 characters.",
-    missingRequired: isNo ? "Fyll inn alle påkrevde felt." : "Fill in all required fields.",
+    missingCompany: isNo ? "Fyll inn alle påkrevde felt." : "Fill in all required fields.",
     invalidOrgNr: isNo ? "Org.nr ser ikke riktig ut (9 siffer)." : "Org number looks wrong (9 digits).",
     networkError: isNo
       ? "Noe gikk galt. Sjekk at Worker-endepunktene er riktige."
@@ -253,12 +236,23 @@ const PaywallModal: React.FC<Props> = ({
 
   const orgNrOk = isProbablyOrgNr(orgNr);
 
-  // Required fields for BUY
-  const countryOk = Boolean((country || "").trim());
-  const buyRequiredOk =
-    customerType === "individual"
-      ? Boolean(fullName.trim() && countryOk)
-      : Boolean(orgName.trim() && normalizeOrgNr(orgNr) && orgNrOk && countryOk);
+  const companyOk =
+    buyerType === "company"
+      ? Boolean(
+          orgName.trim() &&
+            normalizeOrgNr(orgNr) &&
+            contactName.trim() &&
+            phone.trim() &&
+            orgNrOk
+        )
+      : true;
+
+  const privateOk =
+    buyerType === "private"
+      ? Boolean(fullName.trim() && country.trim())
+      : true;
+
+  const buyOk = mode === "buy" ? companyOk && privateOk : true;
 
   const selectedExVat = billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
   const vatAmount = selectedExVat * vatRate;
@@ -271,11 +265,13 @@ const PaywallModal: React.FC<Props> = ({
     const e = email.trim();
     const p = password;
 
+    // 1) prøv å opprette bruker
     try {
       const cred = await createUserWithEmailAndPassword(auth, e, p);
       return await cred.user.getIdToken(true);
     } catch (err: any) {
       const code = String(err?.code || "");
+      // 2) hvis bruker finnes, logg inn
       if (code.includes("email-already-in-use")) {
         const cred = await signInWithEmailAndPassword(auth, e, p);
         return await cred.user.getIdToken(true);
@@ -314,7 +310,11 @@ const PaywallModal: React.FC<Props> = ({
         throw new Error(txt || `HTTP ${res.status}`);
       }
 
-      setStatus(t.trialOk);
+      setStatus(
+        isNo
+          ? "Trial er startet. Du kan nå bruke Pro-funksjoner i 10 dager."
+          : "Trial started. You can now use Pro features for 10 days."
+      );
     } catch (e: any) {
       setError(e?.message || t.networkError);
     } finally {
@@ -331,9 +331,9 @@ const PaywallModal: React.FC<Props> = ({
     if (!emailOk) return;
     if (!passwordOk) return;
 
-    if (!buyRequiredOk) {
-      if (customerType === "company" && !orgNrOk) setError(t.invalidOrgNr);
-      else setError(t.missingRequired);
+    if (!buyOk) {
+      if (buyerType === "company" && !orgNrOk) setError(t.invalidOrgNr);
+      else setError(t.missingCompany);
       return;
     }
 
@@ -341,9 +341,10 @@ const PaywallModal: React.FC<Props> = ({
     try {
       const idToken = await ensureAuthAndGetIdToken();
 
+      // ✅ Kontrollerte retur-URLer (Step 1)
       const origin = window.location.origin;
-      const successUrl = `${origin}/progress/pricing?from=checkout&refresh=1`;
-      const cancelUrl = `${origin}/progress/pricing?canceled=1`;
+      const successUrl = `${origin}/progress/pricing?from=checkout&success=1`;
+      const cancelUrl = `${origin}/progress/pricing?from=checkout&canceled=1`;
 
       const payload: any = {
         email: email.trim(),
@@ -352,23 +353,23 @@ const PaywallModal: React.FC<Props> = ({
         purchaseType,
         successUrl,
         cancelUrl,
-
-        customerType,
-        country: country.trim(),
-
-        // optional contact
-        contactName: contactName.trim() || undefined,
-        phone: phone.trim() || undefined,
-
         quantity: 1,
         tier: "intro",
       };
 
-      if (customerType === "individual") {
-        payload.fullName = fullName.trim();
-      } else {
+      if (buyerType === "company") {
         payload.orgName = orgName.trim();
         payload.orgNr = normalizeOrgNr(orgNr);
+        payload.contactName = contactName.trim();
+        payload.phone = phone.trim();
+      } else {
+        // Privatkjøp: send minimum, Worker kan opprette "Personal" org i bakgrunnen
+        payload.orgName = fullName.trim();
+        payload.orgNr = null;
+        payload.contactName = fullName.trim();
+        payload.phone = phone.trim() || null;
+        payload.country = country.trim();
+        payload.buyerType = "private";
       }
 
       const res = await fetch(`${base}${ROUTE_CHECKOUT_CREATE}`, {
@@ -404,24 +405,20 @@ const PaywallModal: React.FC<Props> = ({
     }
   }
 
-  const goToAppHref = "/progress/app";
-
   // Theme-driven styling
   const overlayBg = isDark ? "rgba(0,0,0,0.86)" : "rgba(0,0,0,0.45)";
   const overlayBlur = isDark ? "blur(10px)" : "blur(6px)";
 
   const panelBg = "var(--mcl-surface)";
   const panelBorder = "1px solid var(--mcl-border)";
-  const panelShadow = isDark ? "0 18px 60px rgba(0,0,0,0.55)" : "0 18px 60px rgba(0,0,0,0.20)";
+  const panelShadow = isDark
+    ? "0 18px 60px rgba(0,0,0,0.55)"
+    : "0 18px 60px rgba(0,0,0,0.20)";
 
   const line = isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.10)";
 
   const inputBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
   const chipBorder = isDark ? "1px solid rgba(255,255,255,0.20)" : "1px solid rgba(0,0,0,0.16)";
-
-  const dangerBorder = "1px solid rgba(255,80,80,0.75)";
-
-  const requiredStar = <span style={{ opacity: 0.85 }}>*</span>;
 
   return (
     <div
@@ -498,9 +495,7 @@ const PaywallModal: React.FC<Props> = ({
         <div style={{ padding: "1rem", overflow: "auto" }}>
           {/* Email */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-              {t.emailLabel} {requiredStar}
-            </label>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.emailLabel}</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -510,7 +505,7 @@ const PaywallModal: React.FC<Props> = ({
                 width: "100%",
                 padding: "0.7rem 0.8rem",
                 borderRadius: 12,
-                border: showEmailError ? dangerBorder : chipBorder,
+                border: showEmailError ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
                 background: inputBg,
                 color: "inherit",
                 outline: "none",
@@ -522,9 +517,7 @@ const PaywallModal: React.FC<Props> = ({
 
           {/* Password */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-              {t.passwordLabel} {requiredStar}
-            </label>
+            <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.passwordLabel}</label>
             <input
               type="password"
               value={password}
@@ -535,7 +528,7 @@ const PaywallModal: React.FC<Props> = ({
                 width: "100%",
                 padding: "0.7rem 0.8rem",
                 borderRadius: 12,
-                border: showPasswordError ? dangerBorder : chipBorder,
+                border: showPasswordError ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
                 background: inputBg,
                 color: "inherit",
                 outline: "none",
@@ -545,112 +538,45 @@ const PaywallModal: React.FC<Props> = ({
             {showPasswordError && <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>{t.invalidPassword}</div>}
           </div>
 
-          {/* BUY: customer type + required fields */}
+          {/* Buyer toggle (kun ved kjøp) */}
           {mode === "buy" && (
             <div style={{ marginBottom: "1rem" }}>
-              {/* subtle subheading (still "one bolk") */}
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", marginBottom: 10 }}>
-                <div style={{ fontWeight: 900 }}>{t.detailsTitle}</div>
-                <div style={{ fontSize: 12, opacity: 0.75, color: "var(--mcl-text-dim)" }}>{t.requiredNote}</div>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.buyerTypeLabel}</div>
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="radio"
+                    name="buyerType"
+                    checked={buyerType === "company"}
+                    onChange={() => setBuyerType("company")}
+                  />
+                  {t.buyerCompany}
+                </label>
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="radio"
+                    name="buyerType"
+                    checked={buyerType === "private"}
+                    onChange={() => setBuyerType("private")}
+                  />
+                  {t.buyerPrivate}
+                </label>
               </div>
+            </div>
+          )}
 
-              {/* toggle */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>{t.buyCustomerType}</div>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="radio"
-                      name="customerType"
-                      checked={customerType === "company"}
-                      onChange={() => setCustomerType("company")}
-                    />
-                    {t.company}
-                  </label>
-                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="radio"
-                      name="customerType"
-                      checked={customerType === "individual"}
-                      onChange={() => setCustomerType("individual")}
-                    />
-                    {t.individual}
-                  </label>
-                </div>
-              </div>
+          {/* Firmainfo / Privatinfo (kun ved kjøp) */}
+          {mode === "buy" && buyerType === "company" && (
+            <div style={{ marginBottom: "1rem" }}>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.orgTitle}</div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {customerType === "individual" ? (
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                      {t.fullName} {requiredStar}
-                    </label>
-                    <input
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
-                      style={{
-                        width: "100%",
-                        padding: "0.7rem 0.8rem",
-                        borderRadius: 12,
-                        border: chipBorder,
-                        background: inputBg,
-                        color: "inherit",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                        {t.orgTitle} {requiredStar}
-                      </label>
-                      <input
-                        value={orgName}
-                        onChange={(e) => setOrgName(e.target.value)}
-                        placeholder={isNo ? "Firma AS" : "Company Ltd"}
-                        style={{
-                          width: "100%",
-                          padding: "0.7rem 0.8rem",
-                          borderRadius: 12,
-                          border: chipBorder,
-                          background: inputBg,
-                          color: "inherit",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                        {t.orgNr} {requiredStar}
-                      </label>
-                      <input
-                        value={orgNr}
-                        onChange={(e) => setOrgNr(e.target.value)}
-                        placeholder={isNo ? "9 siffer" : "9 digits"}
-                        style={{
-                          width: "100%",
-                          padding: "0.7rem 0.8rem",
-                          borderRadius: 12,
-                          border: !orgNrOk ? dangerBorder : chipBorder,
-                          background: inputBg,
-                          color: "inherit",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                  </>
-                )}
-
                 <div>
-                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>
-                    {t.country} {requiredStar}
-                  </label>
-                  <select
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgName}</label>
+                  <input
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder={isNo ? "Firma AS" : "Company Ltd"}
                     style={{
                       width: "100%",
                       padding: "0.7rem 0.8rem",
@@ -660,96 +586,145 @@ const PaywallModal: React.FC<Props> = ({
                       color: "inherit",
                       outline: "none",
                     }}
-                  >
-                    <option value="NO">{isNo ? "Norge" : "Norway"}</option>
-                    <option value="SE">Sweden</option>
-                    <option value="DK">Denmark</option>
-                    <option value="FI">Finland</option>
-                    <option value="GB">United Kingdom</option>
-                    <option value="US">United States</option>
-                    <option value="DE">Germany</option>
-                    <option value="NL">Netherlands</option>
-                    <option value="FR">France</option>
-                    <option value="OTHER">{isNo ? "Annet" : "Other"}</option>
-                  </select>
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.orgNr}</label>
+                  <input
+                    value={orgNr}
+                    onChange={(e) => setOrgNr(e.target.value)}
+                    placeholder={isNo ? "9 siffer" : "9 digits"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: !orgNrOk ? "1px solid rgba(255,80,80,0.75)" : chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.contactName}</label>
+                  <input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phone}</label>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={isNo ? "+47 ..." : "+47 ..."}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* optional contact */}
-              <div style={{ marginTop: 14 }}>
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.contactOptionalTitle}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.contactName}</label>
-                    <input
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
-                      style={{
-                        width: "100%",
-                        padding: "0.7rem 0.8rem",
-                        borderRadius: 12,
-                        border: chipBorder,
-                        background: inputBg,
-                        color: "inherit",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
+          {mode === "buy" && buyerType === "private" && (
+            <div style={{ marginBottom: "1rem" }}>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>{t.privateTitle}</div>
 
-                  <div>
-                    <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phone}</label>
-                    <input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder={isNo ? "+47 ..." : "+47 ..."}
-                      style={{
-                        width: "100%",
-                        padding: "0.7rem 0.8rem",
-                        borderRadius: 12,
-                        border: chipBorder,
-                        background: inputBg,
-                        color: "inherit",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.fullName}</label>
+                  <input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder={isNo ? "Ola Nordmann" : "Jane Doe"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.country}</label>
+                  <input
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    placeholder={isNo ? "Norge" : "Norway"}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "block", fontWeight: 800, marginBottom: 6 }}>{t.phone}</label>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={isNo ? "+47 ..." : "+47 ..."}
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem 0.8rem",
+                      borderRadius: 12,
+                      border: chipBorder,
+                      background: inputBg,
+                      color: "inherit",
+                      outline: "none",
+                    }}
+                  />
                 </div>
               </div>
             </div>
           )}
 
           {mode === "trial" ? (
-            <>
-              <button
-                type="button"
-                onClick={startTrial}
-                disabled={busy}
-                style={{
-                  padding: "0.8rem 1rem",
-                  borderRadius: 12,
-                  border: chipBorder,
-                  background: "rgba(255,255,255,0.10)",
-                  color: "inherit",
-                  cursor: busy ? "default" : "pointer",
-                  fontWeight: 900,
-                }}
-              >
-                {t.startTrial}
-              </button>
-
-              {status && (
-                <div style={{ marginTop: "0.75rem" }}>
-                  <a
-                    href={goToAppHref}
-                    className="hero-cta"
-                    style={{ display: "inline-block", textDecoration: "none" }}
-                  >
-                    {t.openApp}
-                  </a>
-                </div>
-              )}
-            </>
+            <button
+              type="button"
+              onClick={startTrial}
+              disabled={busy}
+              style={{
+                padding: "0.8rem 1rem",
+                borderRadius: 12,
+                border: chipBorder,
+                background: "rgba(255,255,255,0.10)",
+                color: "inherit",
+                cursor: busy ? "default" : "pointer",
+                fontWeight: 900,
+              }}
+            >
+              {t.startTrial}
+            </button>
           ) : (
             <>
               <div
@@ -838,7 +813,8 @@ const PaywallModal: React.FC<Props> = ({
                     <div style={{ fontWeight: 900 }}>{t.calcTotal}:</div>
                     <div style={{ textAlign: "right", fontWeight: 900 }}>
                       {formatKr(selectedInclVat, lang)}
-                      {purchaseType === "subscription" && (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
+                      {purchaseType === "subscription" &&
+                        (billingPeriod === "year" ? ` ${t.perYear}` : ` ${t.perMonth}`)}
                     </div>
                   </div>
 
@@ -852,7 +828,7 @@ const PaywallModal: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={goToCheckout}
-                  disabled={busy || !emailOk || !passwordOk || !buyRequiredOk}
+                  disabled={busy}
                   style={{
                     padding: "0.8rem 1rem",
                     borderRadius: 12,
@@ -861,7 +837,6 @@ const PaywallModal: React.FC<Props> = ({
                     color: "inherit",
                     cursor: busy ? "default" : "pointer",
                     fontWeight: 900,
-                    opacity: busy || !emailOk || !passwordOk || !buyRequiredOk ? 0.6 : 1,
                   }}
                 >
                   {t.goToCheckout}
