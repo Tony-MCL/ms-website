@@ -1,11 +1,11 @@
 import React from "react";
 import { useI18n } from "../i18n/useI18n";
+import { LINKS } from "../config/links";
 
 // Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
-const MCL_ORIGIN = "https://morningcoffeelabs.no";
 function mclHref(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`;
-  return `${MCL_ORIGIN}/#${p}`;
+  return `${LINKS.mcl}/#${p}`;
 }
 
 const Footer: React.FC = () => {
@@ -20,16 +20,24 @@ const Footer: React.FC = () => {
         </span>
 
         <nav className="footer-links">
-          <a href={mclHref("/kjopsvilkar")}>{t("footer.links.termsPurchase")}</a>
+          <a href={mclHref("/kjopsvilkar")} rel="noopener noreferrer">
+            {t("footer.links.termsPurchase")}
+          </a>
           <span>·</span>
 
-          <a href={mclHref("/brukervilkar")}>{t("footer.links.termsUse")}</a>
+          <a href={mclHref("/brukervilkar")} rel="noopener noreferrer">
+            {t("footer.links.termsUse")}
+          </a>
           <span>·</span>
 
-          <a href={mclHref("/personvern")}>{t("footer.links.privacy")}</a>
+          <a href={mclHref("/personvern")} rel="noopener noreferrer">
+            {t("footer.links.privacy")}
+          </a>
           <span>·</span>
 
-          <a href={mclHref("/refusjon")}>{t("footer.links.refund")}</a>
+          <a href={mclHref("/refusjon")} rel="noopener noreferrer">
+            {t("footer.links.refund")}
+          </a>
         </nav>
       </div>
     </footer>
