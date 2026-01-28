@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
+import { LINKS } from "../config/links";
 
 type WhyBullet = { title: string; body: string };
 type Tile = { title: string; body: string };
@@ -58,9 +59,10 @@ const ProgressPage: React.FC = () => {
             {ctaMoreBtn}
           </Link>
 
-          <Link className="hero-cta" to="/progress/app">
+          {/* Ekstern lenke til Progress-appen */}
+          <a className="hero-cta" href={LINKS.progress} rel="noopener noreferrer">
             {ctaAppBtn}
-          </Link>
+          </a>
 
           <Link className="hero-cta" to="/progress/priser">
             {ctaPricesBtn}
