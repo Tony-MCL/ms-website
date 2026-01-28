@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
+import { LINKS } from "../config/links";
 
 function useQuery() {
   const { search } = useLocation();
@@ -26,7 +27,7 @@ const ProgressCheckoutPage: React.FC = () => {
     ? "checkout.bodyCanceled"
     : "checkout.bodyDefault";
 
-  const primaryHref = success ? "/progress" : "/progress/priser";
+  const primaryHref = success ? LINKS.progress : "/progress/priser";
   const primaryTextKey = success
     ? "checkout.primaryOpenProgress"
     : "checkout.primaryToPricing";
@@ -81,8 +82,9 @@ const ProgressCheckoutPage: React.FC = () => {
               flexWrap: "wrap",
             }}
           >
-            <Link
-              to={primaryHref}
+            {success ? (
+              <a
+                href={primaryHref}
               className="btn"
               style={{
                 textDecoration: "none",
