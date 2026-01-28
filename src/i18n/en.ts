@@ -702,7 +702,7 @@ progressPricing: {
   title: "Pricing & license",
   lead: "Choose the level that fits. Start free and upgrade anytime.",
 
-  openApp: "Open the Progress app",
+  openApp: "Open Progress",
 
   banner: {
     successMsg:
