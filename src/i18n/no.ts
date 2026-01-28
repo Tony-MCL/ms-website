@@ -624,7 +624,7 @@ progressPricing: {
   title: "Priser og lisens",
   lead: "Velg nivået som passer. Du kan starte gratis og oppgradere når du vil.",
 
-  openApp: "Åpne Progress-appen",
+  openApp: "Åpne Progress",
 
   banner: {
     successMsg:
