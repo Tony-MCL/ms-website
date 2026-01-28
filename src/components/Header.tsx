@@ -2,15 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
 import type { Lang } from "../i18n";
+import { LINKS } from "../config/links";
 
 const assetBase = import.meta.env.BASE_URL || "/";
 const logoUrl = `${assetBase}mcl-logo.png`;
 
 // Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
-const MCL_ORIGIN = "https://morningcoffeelabs.no";
 function mclHref(path: string) {
   const p = path.startsWith("/") ? path : `/${path}`;
-  return `${MCL_ORIGIN}/#${p}`;
+  return `${LINKS.mcl}/#${p}`;
 }
 
 type ThemeMode = "light" | "dark";
@@ -25,8 +25,7 @@ function getInitialTheme(): ThemeMode {
   const saved = localStorage.getItem("mcl_theme");
   if (saved === "dark" || saved === "light") return saved;
   const prefersDark =
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
+    window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   return prefersDark ? "dark" : "light";
 }
 
@@ -75,16 +74,24 @@ const Header: React.FC = () => {
       <header className="header">
         <div className="header-logo">
           {/* Logo tar deg tilbake til MCL */}
-          <a href={mclHref("/")} onClick={closeMenu}>
+          <a href={mclHref("/")} onClick={closeMenu} rel="noopener noreferrer">
             <img src={logoUrl} alt={t("header.logoAlt")} />
           </a>
         </div>
 
         <nav className="header-nav">
-          <a href={navExternal[0].href}>{t("header.nav.home")}</a>
-          <a href={navExternal[1].href}>{t("header.nav.services")}</a>
-          <a href={navExternal[2].href}>{t("header.nav.about")}</a>
-          <a href={navExternal[3].href}>{t("header.nav.contact")}</a>
+          <a href={navExternal[0].href} rel="noopener noreferrer">
+            {t("header.nav.home")}
+          </a>
+          <a href={navExternal[1].href} rel="noopener noreferrer">
+            {t("header.nav.services")}
+          </a>
+          <a href={navExternal[2].href} rel="noopener noreferrer">
+            {t("header.nav.about")}
+          </a>
+          <a href={navExternal[3].href} rel="noopener noreferrer">
+            {t("header.nav.contact")}
+          </a>
 
           {/* Progress blir igjen her på managesystem.no */}
           <Link className={isActive("/progress") ? "active" : ""} to="/progress">
@@ -112,24 +119,14 @@ const Header: React.FC = () => {
             type="button"
             className="theme-toggle"
             onClick={toggleTheme}
-            aria-label={
-              theme === "dark"
-                ? t("header.theme.ariaToLight")
-                : t("header.theme.ariaToDark")
-            }
-            title={
-              theme === "dark"
-                ? t("header.theme.titleLight")
-                : t("header.theme.titleDark")
-            }
+            aria-label={theme === "dark" ? t("header.theme.ariaToLight") : t("header.theme.ariaToDark")}
+            title={theme === "dark" ? t("header.theme.titleLight") : t("header.theme.titleDark")}
           >
             <span className="theme-icon" aria-hidden="true">
               {theme === "dark" ? "🌙" : "☀️"}
             </span>
             <span className="theme-label">
-              {theme === "dark"
-                ? t("header.theme.labelDark")
-                : t("header.theme.labelLight")}
+              {theme === "dark" ? t("header.theme.labelDark") : t("header.theme.labelLight")}
             </span>
           </button>
 
@@ -149,19 +146,19 @@ const Header: React.FC = () => {
       </header>
 
       <div className={`mobile-menu ${open ? "open" : ""}`}>
-        <a href={navExternal[0].href} onClick={closeMenu}>
+        <a href={navExternal[0].href} onClick={closeMenu} rel="noopener noreferrer">
           {t("header.nav.home")}
         </a>
 
-        <a href={navExternal[1].href} onClick={closeMenu}>
+        <a href={navExternal[1].href} onClick={closeMenu} rel="noopener noreferrer">
           {t("header.nav.services")}
         </a>
 
-        <a href={navExternal[2].href} onClick={closeMenu}>
+        <a href={navExternal[2].href} onClick={closeMenu} rel="noopener noreferrer">
           {t("header.nav.about")}
         </a>
 
-        <a href={navExternal[3].href} onClick={closeMenu}>
+        <a href={navExternal[3].href} onClick={closeMenu} rel="noopener noreferrer">
           {t("header.nav.contact")}
         </a>
 
@@ -169,32 +166,21 @@ const Header: React.FC = () => {
           {t("header.nav.progress")}
         </Link>
 
-        <button
-          type="button"
-          className="theme-toggle mobile"
-          onClick={toggleLang}
-        >
+        <button type="button" className="theme-toggle mobile" onClick={toggleLang}>
           <span className="theme-icon" aria-hidden="true">
             🌐
           </span>
           <span className="theme-label">
-            {t("header.lang.label")}:{" "}
-            {lang === "no" ? t("header.lang.nb") : t("header.lang.en")}
+            {t("header.lang.label")}: {lang === "no" ? t("header.lang.nb") : t("header.lang.en")}
           </span>
         </button>
 
-        <button
-          type="button"
-          className="theme-toggle mobile"
-          onClick={toggleTheme}
-        >
+        <button type="button" className="theme-toggle mobile" onClick={toggleTheme}>
           <span className="theme-icon" aria-hidden="true">
             {theme === "dark" ? "🌙" : "☀️"}
           </span>
           <span className="theme-label">
-            {theme === "dark"
-              ? t("header.theme.mobileDark")
-              : t("header.theme.mobileLight")}
+            {theme === "dark" ? t("header.theme.mobileDark") : t("header.theme.mobileLight")}
           </span>
         </button>
       </div>
