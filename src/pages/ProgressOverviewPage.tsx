@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/useI18n";
+import { LINKS } from "../config/links";
 
 type Pair = {
   factTitle: string;
@@ -53,9 +53,9 @@ const ProgressOverviewPage: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <Link className="hero-cta" to="/progress/app">
+          <a className="hero-cta" href={LINKS.progress} rel="noopener noreferrer">
             {tryFreeCta}
-          </Link>
+          </a>
         </div>
       </section>
 
@@ -100,9 +100,7 @@ const ProgressOverviewPage: React.FC = () => {
                     src={p.imgSrc}
                     alt={p.imgAlt}
                     loading="lazy"
-                    onError={() =>
-                      setMissing((prev) => ({ ...prev, [idx]: true }))
-                    }
+                    onError={() => setMissing((prev) => ({ ...prev, [idx]: true }))}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -250,9 +248,7 @@ const ProgressOverviewPage: React.FC = () => {
                     </strong>
                     <div style={{ fontSize: 14, lineHeight: 1.4 }}>
                       {missingBodyPrefix}{" "}
-                      <code>{`public/progress/progress-0${
-                        openIndex + 1
-                      }.png`}</code>
+                      <code>{`public/progress/progress-0${openIndex + 1}.png`}</code>
                     </div>
                   </div>
                 </div>
@@ -260,9 +256,7 @@ const ProgressOverviewPage: React.FC = () => {
                 <img
                   src={pairs[openIndex].imgSrc}
                   alt={pairs[openIndex].imgAlt}
-                  onError={() =>
-                    setMissing((prev) => ({ ...prev, [openIndex]: true }))
-                  }
+                  onError={() => setMissing((prev) => ({ ...prev, [openIndex]: true }))}
                   style={{
                     display: "block",
                     maxWidth: "100%",
