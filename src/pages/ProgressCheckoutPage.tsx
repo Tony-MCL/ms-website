@@ -85,19 +85,36 @@ const ProgressCheckoutPage: React.FC = () => {
             {success ? (
               <a
                 href={primaryHref}
-              className="btn"
-              style={{
-                textDecoration: "none",
-                padding: "0.75rem 1rem",
-                borderRadius: 12,
-                border: "1px solid var(--mcl-border)",
-                background: "rgba(255,255,255,0.10)",
-                fontWeight: 800,
-                color: "var(--mcl-text)",
-              }}
-            >
-              {t(primaryTextKey)}
-            </Link>
+                className="btn"
+                style={{
+                  textDecoration: "none",
+                  padding: "0.75rem 1rem",
+                  borderRadius: 12,
+                  border: "1px solid var(--mcl-border)",
+                  background: "rgba(255,255,255,0.10)",
+                  fontWeight: 800,
+                  color: "var(--mcl-text)",
+                }}
+              >
+                {t(primaryTextKey)}
+              </a>
+            ) : (
+              <Link
+                to={primaryHref}
+                className="btn"
+                style={{
+                  textDecoration: "none",
+                  padding: "0.75rem 1rem",
+                  borderRadius: 12,
+                  border: "1px solid var(--mcl-border)",
+                  background: "rgba(255,255,255,0.10)",
+                  fontWeight: 800,
+                  color: "var(--mcl-text)",
+                }}
+              >
+                {t(primaryTextKey)}
+              </Link>
+            )}
 
             <Link
               to={secondaryHref}
