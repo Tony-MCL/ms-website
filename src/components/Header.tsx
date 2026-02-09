@@ -7,12 +7,6 @@ import { LINKS } from "../config/links";
 const assetBase = import.meta.env.BASE_URL || "/";
 const logoUrl = `${assetBase}mcl-logo.png`;
 
-// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
-function mclHref(path: string) {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${LINKS.mcl}/#${p}`;
-}
-
 type ThemeMode = "light" | "dark";
 
 function applyTheme(mode: ThemeMode) {
@@ -21,12 +15,54 @@ function applyTheme(mode: ThemeMode) {
   else html.removeAttribute("data-theme");
 }
 
+function readPrefsFromUrl(): { theme?: ThemeMode; lang?: Lang } {
+  const href = window.location.href;
+  const url = new URL(href);
+
+  const out: { theme?: ThemeMode; lang?: Lang } = {};
+
+  const lang = url.searchParams.get("lang");
+  const theme = url.searchParams.get("theme");
+
+  if (lang === "no" || lang === "en") out.lang = lang;
+  if (theme === "dark" || theme === "light") out.theme = theme;
+
+  if (url.hash && url.hash.includes("?")) {
+    const idx = url.hash.indexOf("?");
+    const qs = url.hash.slice(idx + 1);
+    const sp = new URLSearchParams(qs);
+
+    const hLang = sp.get("lang");
+    const hTheme = sp.get("theme");
+
+    if (!out.lang && (hLang === "no" || hLang === "en")) out.lang = hLang;
+    if (!out.theme && (hTheme === "dark" || hTheme === "light")) out.theme = hTheme as ThemeMode;
+  }
+
+  return out;
+}
+
 function getInitialTheme(): ThemeMode {
+  const fromUrl = readPrefsFromUrl().theme;
+  if (fromUrl === "dark" || fromUrl === "light") return fromUrl;
+
   const saved = localStorage.getItem("mcl_theme");
   if (saved === "dark" || saved === "light") return saved;
+
   const prefersDark =
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   return prefersDark ? "dark" : "light";
+}
+
+// Eksterne lenker tilbake til Morning Coffee Labs (HashRouter)
+// Vi legger lang/theme i query FØR hash: https://mcl.no/?lang=no&theme=dark#/om
+function mclHref(path: string, prefs: { lang: Lang; theme: ThemeMode }) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  const u = new URL(LINKS.mcl);
+  u.searchParams.set("lang", prefs.lang);
+  u.searchParams.set("theme", prefs.theme);
+  u.hash = `#${p}`;
+  return u.toString();
 }
 
 const Header: React.FC = () => {
@@ -39,6 +75,7 @@ const Header: React.FC = () => {
   useEffect(() => {
     const initial = getInitialTheme();
     setTheme(initial);
+    localStorage.setItem("mcl_theme", initial);
     applyTheme(initial);
   }, []);
 
@@ -48,12 +85,12 @@ const Header: React.FC = () => {
 
   const navExternal = useMemo(
     () => [
-      { key: "home", href: mclHref("/") },
-      { key: "services", href: mclHref("/idebank") },
-      { key: "about", href: mclHref("/om") },
-      { key: "contact", href: mclHref("/kontakt") },
+      { key: "home", href: mclHref("/", { lang, theme }) },
+      { key: "services", href: mclHref("/idebank", { lang, theme }) },
+      { key: "about", href: mclHref("/om", { lang, theme }) },
+      { key: "contact", href: mclHref("/kontakt", { lang, theme }) },
     ],
-    []
+    [lang, theme]
   );
 
   const toggleTheme = () => {
@@ -74,7 +111,7 @@ const Header: React.FC = () => {
       <header className="header">
         <div className="header-logo">
           {/* Logo tar deg tilbake til MCL */}
-          <a href={mclHref("/")} onClick={closeMenu} rel="noopener noreferrer">
+          <a href={navExternal[0].href} onClick={closeMenu} rel="noopener noreferrer">
             <img src={logoUrl} alt={t("header.logoAlt")} />
           </a>
         </div>
@@ -94,7 +131,7 @@ const Header: React.FC = () => {
           </a>
 
           {/* Progress blir igjen her på managesystem.no */}
-          <Link className={isActive("/progress") ? "active" : ""} to="/progress">
+          <Link className={isActive("/progress") ? "active" : ""} to="/progress" onClick={closeMenu}>
             {t("header.nav.progress")}
           </Link>
         </nav>
