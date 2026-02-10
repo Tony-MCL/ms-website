@@ -39,8 +39,8 @@ function buildAppHref(params?: Record<string, string>) {
 }
 
 // Intropriser (eks mva)
-const PRO_MONTH_EX_VAT = 129;
-const PRO_YEAR_EX_VAT = 1290;
+const PRO_MONTH_EX_VAT = 99;
+const PRO_YEAR_EX_VAT = 990;
 
 // MVA for visning i modal
 const VAT_RATE = 0.25;
