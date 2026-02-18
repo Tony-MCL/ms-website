@@ -19,11 +19,10 @@ type Props = {
   lang: string; // "no" | "en"
   workerBaseUrl: string;
 
-  // Pricing (ex VAT) shown in modal
+  // Pricing shown in modal
   priceMonthExVat: number; // e.g. 129
   priceYearExVat: number; // e.g. 1290
-  vatRate: number; // e.g. 0.25
-
+  vatRate: number; // e.g. 0.25 (kept for compatibility, not shown in UI)
   currency: string; // "NOK"
 };
 
@@ -77,7 +76,7 @@ const PaywallModal: React.FC<Props> = ({
   workerBaseUrl,
   priceMonthExVat,
   priceYearExVat,
-  vatRate,
+  vatRate, // kept (unused) for compatibility
   currency,
 }) => {
   const { t } = useI18n();
@@ -204,8 +203,6 @@ const PaywallModal: React.FC<Props> = ({
 
   const selectedExVat =
     billingPeriod === "month" ? priceMonthExVat : priceYearExVat;
-  const vatAmount = selectedExVat * vatRate;
-  const selectedInclVat = selectedExVat + vatAmount;
 
   const title =
     mode === "trial" ? t("paywall.trial.title") : t("paywall.buy.title");
@@ -279,7 +276,8 @@ const PaywallModal: React.FC<Props> = ({
     if (!passwordOk) return;
 
     if (!buyOk) {
-      if (buyerType === "company" && !orgNrOk) setError(t("paywall.errors.invalidOrgNr"));
+      if (buyerType === "company" && !orgNrOk)
+        setError(t("paywall.errors.invalidOrgNr"));
       else setError(t("paywall.errors.missingRequired"));
       return;
     }
@@ -338,7 +336,9 @@ const PaywallModal: React.FC<Props> = ({
         const txt = await res.text().catch(() => "");
         const looksLikeHtml = /<html|<!doctype/i.test(txt);
         if (looksLikeHtml) {
-          throw new Error(`${t("paywall.errors.wrongEndpoint")}\nHTTP ${res.status} @ ${endpoint}`);
+          throw new Error(
+            `${t("paywall.errors.wrongEndpoint")}\nHTTP ${res.status} @ ${endpoint}`
+          );
         }
         throw new Error(txt || `HTTP ${res.status}`);
       }
@@ -549,7 +549,9 @@ const PaywallModal: React.FC<Props> = ({
             </div>
 
             <div>
-              <label style={labelStyle}>{t("paywall.fields.passwordLabel")}</label>
+              <label style={labelStyle}>
+                {t("paywall.fields.passwordLabel")}
+              </label>
               <input
                 type="password"
                 value={password}
@@ -577,7 +579,9 @@ const PaywallModal: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <label style={labelStyle}>{t("paywall.fields.orgNameLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.orgNameLabel")}
+                  </label>
                   <input
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
@@ -587,7 +591,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t("paywall.fields.orgNrLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.orgNrLabel")}
+                  </label>
                   <input
                     value={orgNr}
                     onChange={(e) => setOrgNr(e.target.value)}
@@ -597,7 +603,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t("paywall.fields.contactNameLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.contactNameLabel")}
+                  </label>
                   <input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
@@ -607,7 +615,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t("paywall.fields.phoneLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.phoneLabel")}
+                  </label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -629,7 +639,9 @@ const PaywallModal: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <label style={labelStyle}>{t("paywall.fields.fullNameLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.fullNameLabel")}
+                  </label>
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -639,7 +651,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{t("paywall.fields.countryLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.countryLabel")}
+                  </label>
                   <input
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
@@ -649,7 +663,9 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>{t("paywall.fields.phoneLabel")}</label>
+                  <label style={labelStyle}>
+                    {t("paywall.fields.phoneLabel")}
+                  </label>
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -683,9 +699,13 @@ const PaywallModal: React.FC<Props> = ({
                 {/* LEFT */}
                 <div>
                   <div style={{ marginBottom: "0.95rem" }}>
-                    <div style={sectionTitleStyle}>{t("paywall.buy.licenseTypeTitle")}</div>
+                    <div style={sectionTitleStyle}>
+                      {t("paywall.buy.licenseTypeTitle")}
+                    </div>
                     <div style={radioRowStyle}>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <label
+                        style={{ display: "flex", gap: 8, alignItems: "center" }}
+                      >
                         <input
                           type="radio"
                           name="purchaseType"
@@ -694,7 +714,9 @@ const PaywallModal: React.FC<Props> = ({
                         />
                         {t("paywall.buy.purchase.subscription")}
                       </label>
-                      <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <label
+                        style={{ display: "flex", gap: 8, alignItems: "center" }}
+                      >
                         <input
                           type="radio"
                           name="purchaseType"
@@ -708,9 +730,13 @@ const PaywallModal: React.FC<Props> = ({
 
                   {purchaseType === "subscription" ? (
                     <div>
-                      <div style={sectionTitleStyle}>{t("paywall.buy.billingTitle")}</div>
+                      <div style={sectionTitleStyle}>
+                        {t("paywall.buy.billingTitle")}
+                      </div>
                       <div style={radioRowStyle}>
-                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <label
+                          style={{ display: "flex", gap: 8, alignItems: "center" }}
+                        >
                           <input
                             type="radio"
                             name="billingPeriod"
@@ -719,7 +745,9 @@ const PaywallModal: React.FC<Props> = ({
                           />
                           {t("paywall.buy.billing.month")}
                         </label>
-                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <label
+                          style={{ display: "flex", gap: 8, alignItems: "center" }}
+                        >
                           <input
                             type="radio"
                             name="billingPeriod"
@@ -732,9 +760,13 @@ const PaywallModal: React.FC<Props> = ({
                     </div>
                   ) : (
                     <div>
-                      <div style={sectionTitleStyle}>{t("paywall.buy.durationTitle")}</div>
+                      <div style={sectionTitleStyle}>
+                        {t("paywall.buy.durationTitle")}
+                      </div>
                       <div style={radioRowStyle}>
-                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <label
+                          style={{ display: "flex", gap: 8, alignItems: "center" }}
+                        >
                           <input
                             type="radio"
                             name="billingPeriod"
@@ -743,7 +775,9 @@ const PaywallModal: React.FC<Props> = ({
                           />
                           {t("paywall.buy.duration.oneMonth")}
                         </label>
-                        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <label
+                          style={{ display: "flex", gap: 8, alignItems: "center" }}
+                        >
                           <input
                             type="radio"
                             name="billingPeriod"
@@ -758,53 +792,60 @@ const PaywallModal: React.FC<Props> = ({
                 </div>
 
                 {/* RIGHT */}
-                <div
-                  style={{
-                    border: chipBorder,
-                    background: inputBg,
-                    borderRadius: 12,
-                    padding: "0.85rem 0.9rem",
-                  }}
-                >
+                <div>
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      rowGap: 8,
-                      columnGap: 14,
-                      alignItems: "baseline",
-                      fontSize: 13.5,
+                      border: chipBorder,
+                      background: inputBg,
+                      borderRadius: 12,
+                      padding: "0.85rem 0.9rem",
                     }}
                   >
-                    <div style={{ fontWeight: 600 }}>{t("paywall.calc.price")}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 650 }}>
-                      {formatKr(selectedExVat, lang)}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto",
+                        rowGap: 8,
+                        columnGap: 14,
+                        alignItems: "baseline",
+                        fontSize: 13.5,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600 }}>
+                        {t("paywall.calc.price")}:
+                      </div>
+                      <div style={{ textAlign: "right", fontWeight: 700 }}>
+                        {formatKr(selectedExVat, lang)}
+                        {purchaseType === "subscription" &&
+                          (billingPeriod === "year"
+                            ? ` ${t("paywall.calc.perYear")}`
+                            : ` ${t("paywall.calc.perMonth")}`)}
+                      </div>
                     </div>
 
-                    <div style={{ fontWeight: 600 }}>{t("paywall.calc.vat")}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 650 }}>
-                      {formatKr(vatAmount, lang)}
-                    </div>
-
-                    <div style={{ fontWeight: 650 }}>{t("paywall.calc.total")}:</div>
-                    <div style={{ textAlign: "right", fontWeight: 700 }}>
-                      {formatKr(selectedInclVat, lang)}
-                      {purchaseType === "subscription" &&
-                        (billingPeriod === "year"
-                          ? ` ${t("paywall.calc.perYear")}`
-                          : ` ${t("paywall.calc.perMonth")}`)}
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 12,
+                        opacity: 0.75,
+                        color: "var(--mcl-text-dim)",
+                      }}
+                    >
+                      {currency}
                     </div>
                   </div>
 
+                  {/* VAT notice (discreet) */}
                   <div
                     style={{
-                      marginTop: 8,
-                      fontSize: 12,
-                      opacity: 0.75,
+                      marginTop: 10,
+                      fontSize: 12.5,
+                      lineHeight: 1.35,
+                      opacity: 0.85,
                       color: "var(--mcl-text-dim)",
                     }}
                   >
-                    {currency}
+                    {t("paywall.vatNotice")}
                   </div>
                 </div>
               </div>
