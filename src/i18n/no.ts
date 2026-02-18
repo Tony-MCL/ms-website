@@ -477,10 +477,13 @@ const no = {
     calc: {
       price: "Pris",
       vat: "Mva",
-      total: "Pris inkl. mva",
+      total: "Pris",
       perMonth: "kr/mnd",
       perYear: "kr/år",
     },
+    vatNotice:
+      "Salg er for tiden unntatt merverdiavgift. Når registreringsgrensen nås, vil 25 % merverdiavgift bli lagt til i henhold til norsk regelverk.",
+
 
     errors: {
       missingRequired: "Fyll inn alle påkrevde felt.",
@@ -712,9 +715,11 @@ const no = {
       ],
 
       priceHeader: "Pris",
-      priceLine: "{{month}} kr/mnd eller {{year}} kr/år (eks. mva)",
+      priceLine: "{{month}} kr/mnd eller {{year}} kr/år",
       introNote:
         "Introduksjonspris for tidlige brukere. Denne prisen beholdes så lenge lisensen er aktiv.",
+      vatNotice:
+        "Salg er for tiden unntatt merverdiavgift. Når registreringsgrensen nås, vil 25 % merverdiavgift bli lagt til i henhold til norsk regelverk.",
 
       buyCta: "Kjøp lisens for Fullversjon",
     },
