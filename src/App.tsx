@@ -18,7 +18,6 @@ import ProgressFremdriftsplanBrukPage from "./pages/ProgressFremdriftsplanBrukPa
 const App: React.FC = () => {
   return (
     <div className="app-shell">
-      <WatermarkLayer />
 
       <Header />
 
