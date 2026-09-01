@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import WatermarkLayer from "./components/WatermarkLayer";
 
+import HomePage from "./pages/HomePage";
 import ProgressPage from "./pages/ProgressPage";
 import ProgressOverviewPage from "./pages/ProgressOverviewPage";
 import ProgressPricingPage from "./pages/ProgressPricingPage";
@@ -18,29 +19,29 @@ import ProgressFremdriftsplanBrukPage from "./pages/ProgressFremdriftsplanBrukPa
 const App: React.FC = () => {
   return (
     <div className="app-shell">
-
       <Header />
 
-      {/* ✅ MÅ ligge inne i Router-kontekst, og over Routes */}
       <ScrollToTop />
 
-       <div className="app-content" data-scroll-container>
+      <div className="app-content" data-scroll-container>
         <Routes>
+          {/* Manage System landing page */}
+          <Route path="/" element={<HomePage />} />
+
           {/* Manage System: Progress-universet */}
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/progress/oversikt" element={<ProgressOverviewPage />} />
           <Route path="/progress/priser" element={<ProgressPricingPage />} />
 
-          {/* Nye SEO-/læringssider */}
+          {/* SEO-/læringssider */}
           <Route path="/progress/fremdriftsplan" element={<ProgressFremdriftsplanPage />} />
           <Route path="/progress/fremdriftsplan-bruk" element={<ProgressFremdriftsplanBrukPage />} />
 
           <Route path="/progress/app" element={<ProgressAppPage />} />
           <Route path="/progress/checkout" element={<ProgressCheckoutPage />} />
 
-          {/* Alt annet sendes til /progress */}
-          <Route path="/" element={<Navigate to="/progress" replace />} />
-          <Route path="*" element={<Navigate to="/progress" replace />} />
+          {/* Ukjente ruter sendes til Manage System-forsiden */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
 
