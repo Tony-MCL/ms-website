@@ -1,0 +1,296 @@
+.ms-home {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ms-home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  align-items: center;
+  gap: 3rem;
+  padding: 4.5rem 0 4rem;
+}
+
+.ms-home-hero-copy {
+  max-width: 760px;
+}
+
+.ms-home-kicker {
+  display: inline-block;
+  margin-bottom: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mcl-accent-light);
+}
+
+.ms-home-hero h1,
+.ms-home-section h2 {
+  margin: 0;
+}
+
+.ms-home-hero h1 {
+  font-size: clamp(3rem, 7vw, 5.7rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.ms-home-hero-copy > p {
+  max-width: 680px;
+  margin: 1.3rem 0 0;
+  font-size: 1.16rem;
+  line-height: 1.7;
+  color: var(--mcl-text-dim);
+}
+
+.ms-home-brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ms-home-brand img {
+  width: min(100%, 330px);
+  max-height: 330px;
+  object-fit: contain;
+}
+
+.ms-home-section {
+  padding: 4rem 0;
+}
+
+.ms-home-section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.75fr);
+  align-items: end;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.ms-home-section-heading h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.035em;
+}
+
+.ms-home-section-heading > p {
+  margin: 0;
+  color: var(--mcl-text-dim);
+  line-height: 1.65;
+}
+
+.ms-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.35rem;
+}
+
+.ms-tool-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 1.25rem;
+  min-height: 230px;
+  padding: 1.65rem;
+  border: 1px solid var(--mcl-border);
+  border-radius: 24px;
+  background: var(--mcl-surface);
+  color: var(--mcl-text);
+  text-decoration: none;
+  box-shadow: var(--mcl-shadow);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.ms-tool-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--tool-accent);
+}
+
+.ms-tool-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--tool-accent) 45%, var(--mcl-border));
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+}
+
+.ms-tool-card-progress {
+  --tool-accent: #d79a49;
+}
+
+.ms-tool-card-tools {
+  --tool-accent: #3d8f74;
+}
+
+.ms-tool-icon {
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--tool-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tool-accent) 28%, transparent);
+  color: var(--tool-accent);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.ms-tool-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.ms-tool-copy h3,
+.ms-construction-copy h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.7rem;
+}
+
+.ms-tool-copy p,
+.ms-construction-copy p {
+  margin: 0;
+  color: var(--mcl-text-dim);
+  line-height: 1.6;
+}
+
+.ms-tool-copy > span {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  font-weight: 700;
+  color: var(--tool-accent);
+}
+
+.ms-construction-section {
+  position: relative;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(2rem, calc((100vw - 1180px) / 2));
+  background: #111a18;
+  color: #f6f7f6;
+}
+
+.ms-home-section-heading-light > p {
+  color: rgba(246, 247, 246, 0.68);
+}
+
+.ms-construction-section .ms-home-kicker {
+  color: #87c5ad;
+}
+
+.ms-construction-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.ms-construction-image {
+  min-height: 320px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.ms-construction-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ms-construction-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem;
+}
+
+.ms-construction-copy p {
+  max-width: 620px;
+  color: rgba(246, 247, 246, 0.7);
+}
+
+.ms-status-pill {
+  align-self: flex-start;
+  margin-bottom: 1rem;
+  padding: 0.38rem 0.72rem;
+  border: 1px solid rgba(135, 197, 173, 0.34);
+  border-radius: 999px;
+  background: rgba(135, 197, 173, 0.1);
+  color: #a8d9c6;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+html[data-theme="dark"] .ms-tool-card {
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
+}
+
+@media (max-width: 900px) {
+  .ms-home-hero,
+  .ms-home-section-heading,
+  .ms-tool-grid,
+  .ms-construction-card {
+    grid-template-columns: 1fr;
+  }
+
+  .ms-home-hero {
+    padding-top: 2.5rem;
+    gap: 1.25rem;
+  }
+
+  .ms-home-brand {
+    justify-content: flex-start;
+  }
+
+  .ms-home-brand img {
+    width: min(55vw, 240px);
+  }
+
+  .ms-tool-card {
+    min-height: 210px;
+  }
+
+  .ms-construction-image {
+    min-height: 240px;
+    max-height: 360px;
+  }
+}
+
+@media (max-width: 620px) {
+  .ms-home-hero h1 {
+    font-size: clamp(2.7rem, 16vw, 4rem);
+  }
+
+  .ms-home-hero-copy > p {
+    font-size: 1rem;
+  }
+
+  .ms-home-section {
+    padding: 3rem 0;
+  }
+
+  .ms-tool-card {
+    grid-template-columns: 1fr;
+    padding: 1.35rem;
+  }
+
+  .ms-tool-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 17px;
+    font-size: 1.6rem;
+  }
+
+  .ms-construction-section {
+    padding-inline: 1rem;
+  }
+
+  .ms-construction-copy {
+    padding: 1.5rem;
+  }
+}
