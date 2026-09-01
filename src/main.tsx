@@ -5,6 +5,7 @@ import App from "./App";
 
 import "./styles/globals.css";
 import "./styles/styles.css";
+import "./styles/home.css";
 
 import { I18nProvider } from "./i18n/I18nProvider";
 import ErrorBoundary from "./ErrorBoundary";
