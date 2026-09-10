@@ -1,4 +1,6 @@
 .ms-home {
+  width: min(1180px, calc(100% - 4rem));
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -126,7 +128,7 @@
 }
 
 .ms-tool-card-oppdrag {
-  --tool-accent: #547aa5;
+  --tool-accent: #d89a20;
 }
 
 .ms-tool-icon,
@@ -148,11 +150,15 @@
 
 .ms-tool-logo-wrap {
   overflow: hidden;
+  padding: 8px;
 }
 
 .ms-tool-logo {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
@@ -168,14 +174,12 @@
   gap: 1rem;
 }
 
-.ms-tool-copy h3,
-.ms-construction-copy h3 {
+.ms-tool-copy h3 {
   margin: 0 0 0.65rem;
   font-size: 1.7rem;
 }
 
-.ms-tool-copy p,
-.ms-construction-copy p {
+.ms-tool-copy p {
   margin: 0;
   color: var(--mcl-text-dim);
   line-height: 1.6;
@@ -201,78 +205,18 @@
   text-transform: uppercase;
 }
 
-.ms-construction-section {
-  position: relative;
-  margin-inline: calc(50% - 50vw);
-  padding-inline: max(2rem, calc((100vw - 1180px) / 2));
-  background: #111a18;
-  color: #f6f7f6;
-}
-
-.ms-home-section-heading-light > p {
-  color: rgba(246, 247, 246, 0.68);
-}
-
-.ms-construction-section .ms-home-kicker {
-  color: #87c5ad;
-}
-
-.ms-construction-card {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
-  min-height: 320px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.ms-construction-image {
-  min-height: 320px;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.ms-construction-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.ms-construction-copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 2.5rem;
-}
-
-.ms-construction-copy p {
-  max-width: 620px;
-  color: rgba(246, 247, 246, 0.7);
-}
-
-.ms-status-pill {
-  align-self: flex-start;
-  margin-bottom: 1rem;
-  padding: 0.38rem 0.72rem;
-  border: 1px solid rgba(135, 197, 173, 0.34);
-  border-radius: 999px;
-  background: rgba(135, 197, 173, 0.1);
-  color: #a8d9c6;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 html[data-theme="dark"] .ms-tool-card {
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
 }
 
 @media (max-width: 900px) {
+  .ms-home {
+    width: min(100% - 2.5rem, 1180px);
+  }
+
   .ms-home-hero,
   .ms-home-section-heading,
-  .ms-tool-grid,
-  .ms-construction-card {
+  .ms-tool-grid {
     grid-template-columns: 1fr;
   }
 
@@ -292,14 +236,13 @@ html[data-theme="dark"] .ms-tool-card {
   .ms-tool-card {
     min-height: 210px;
   }
-
-  .ms-construction-image {
-    min-height: 240px;
-    max-height: 360px;
-  }
 }
 
 @media (max-width: 620px) {
+  .ms-home {
+    width: calc(100% - 2rem);
+  }
+
   .ms-home-hero h1 {
     font-size: clamp(2.7rem, 16vw, 4rem);
   }
@@ -331,13 +274,5 @@ html[data-theme="dark"] .ms-tool-card {
   .ms-tool-title-row {
     flex-direction: column;
     gap: 0.25rem;
-  }
-
-  .ms-construction-section {
-    padding-inline: 1rem;
-  }
-
-  .ms-construction-copy {
-    padding: 1.5rem;
   }
 }
