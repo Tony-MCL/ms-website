@@ -18,13 +18,17 @@ const copy = {
     progressBody: "Lag, vedlikehold og følg opp fremdriftsplaner for prosjekter.",
     toolsTitle: "Tools",
     toolsBody: "Kabelberegning og tekniske beregningsverktøy for praktisk prosjektarbeid.",
+    mineOppdragTitle: "Mine Oppdrag",
+    mineOppdragBody:
+      "Planlegg befaringer og mindre serviceoppdrag fra kontoret, og få riktige bilder og dokumentasjon tilbake fra felt.",
+    inDevelopment: "Under utvikling",
     constructionKicker: "PÅ ARBEIDSBENKEN",
     constructionTitle: "Under konstruksjon",
     constructionIntro:
       "Nye verktøy kommer til når vi finner arbeidsoppgaver som fortjener en enklere løsning.",
-    photoTitle: "Photo",
+    photoTitle: "Flere verktøy på vei",
     photoBody:
-      "Planlegg bilder før befaring og få riktige bilder tilbake med riktige navn og riktig tilknytning.",
+      "Manage System bygges videre som en samling praktiske arbeidsverktøy. Nye moduler legges til når de er klare for bruk.",
     coming: "Kommer",
   },
   en: {
@@ -40,13 +44,17 @@ const copy = {
     progressBody: "Create, maintain and follow up project schedules and progress plans.",
     toolsTitle: "Tools",
     toolsBody: "Cable sizing and technical calculation tools for practical project work.",
+    mineOppdragTitle: "Mine Oppdrag",
+    mineOppdragBody:
+      "Plan site visits and smaller service jobs from the office, and receive the right photos and documentation back from the field.",
+    inDevelopment: "In development",
     constructionKicker: "ON THE WORKBENCH",
     constructionTitle: "Under construction",
     constructionIntro:
       "New tools are added when we find everyday tasks that deserve a simpler solution.",
-    photoTitle: "Photo",
+    photoTitle: "More tools on the way",
     photoBody:
-      "Plan site photos before a visit and receive the right images back with the right names and context.",
+      "Manage System continues to grow as a collection of practical work tools. New modules are added when they are ready to use.",
     coming: "Coming soon",
   },
 } as const;
@@ -92,6 +100,20 @@ const HomePage: React.FC = () => {
             <div className="ms-tool-copy">
               <h3>{c.toolsTitle}</h3>
               <p>{c.toolsBody}</p>
+              <span>{c.open} <span aria-hidden="true">→</span></span>
+            </div>
+          </a>
+
+          <a className="ms-tool-card ms-tool-card-oppdrag" href="https://mineoppdrag.managesystem.no">
+            <div className="ms-tool-logo-wrap">
+              <img className="ms-tool-logo" src={`${assetBase}mine_oppdrag_logo.png`} alt="" />
+            </div>
+            <div className="ms-tool-copy">
+              <div className="ms-tool-title-row">
+                <h3>{c.mineOppdragTitle}</h3>
+                <span className="ms-tool-status">{c.inDevelopment}</span>
+              </div>
+              <p>{c.mineOppdragBody}</p>
               <span>{c.open} <span aria-hidden="true">→</span></span>
             </div>
           </a>
