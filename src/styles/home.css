@@ -125,7 +125,12 @@
   --tool-accent: #3d8f74;
 }
 
-.ms-tool-icon {
+.ms-tool-card-oppdrag {
+  --tool-accent: #547aa5;
+}
+
+.ms-tool-icon,
+.ms-tool-logo-wrap {
   width: 78px;
   height: 78px;
   display: grid;
@@ -133,14 +138,34 @@
   border-radius: 20px;
   background: color-mix(in srgb, var(--tool-accent) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--tool-accent) 28%, transparent);
+}
+
+.ms-tool-icon {
   color: var(--tool-accent);
   font-size: 2rem;
   font-weight: 800;
 }
 
+.ms-tool-logo-wrap {
+  overflow: hidden;
+}
+
+.ms-tool-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .ms-tool-copy {
   display: flex;
   flex-direction: column;
+}
+
+.ms-tool-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .ms-tool-copy h3,
@@ -161,6 +186,19 @@
   padding-top: 1.25rem;
   font-weight: 700;
   color: var(--tool-accent);
+}
+
+.ms-tool-status {
+  flex: 0 0 auto;
+  padding: 0.34rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tool-accent) 38%, transparent);
+  background: color-mix(in srgb, var(--tool-accent) 10%, transparent);
+  color: var(--tool-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .ms-construction-section {
@@ -279,11 +317,20 @@ html[data-theme="dark"] .ms-tool-card {
     padding: 1.35rem;
   }
 
-  .ms-tool-icon {
+  .ms-tool-icon,
+  .ms-tool-logo-wrap {
     width: 64px;
     height: 64px;
     border-radius: 17px;
+  }
+
+  .ms-tool-icon {
     font-size: 1.6rem;
+  }
+
+  .ms-tool-title-row {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .ms-construction-section {
