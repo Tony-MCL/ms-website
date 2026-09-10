@@ -22,14 +22,6 @@ const copy = {
     mineOppdragBody:
       "Planlegg befaringer og mindre serviceoppdrag fra kontoret, og få riktige bilder og dokumentasjon tilbake fra felt.",
     inDevelopment: "Under utvikling",
-    constructionKicker: "PÅ ARBEIDSBENKEN",
-    constructionTitle: "Under konstruksjon",
-    constructionIntro:
-      "Nye verktøy kommer til når vi finner arbeidsoppgaver som fortjener en enklere løsning.",
-    photoTitle: "Flere verktøy på vei",
-    photoBody:
-      "Manage System bygges videre som en samling praktiske arbeidsverktøy. Nye moduler legges til når de er klare for bruk.",
-    coming: "Kommer",
   },
   en: {
     kicker: "MORNING COFFEE LABS",
@@ -48,14 +40,6 @@ const copy = {
     mineOppdragBody:
       "Plan site visits and smaller service jobs from the office, and receive the right photos and documentation back from the field.",
     inDevelopment: "In development",
-    constructionKicker: "ON THE WORKBENCH",
-    constructionTitle: "Under construction",
-    constructionIntro:
-      "New tools are added when we find everyday tasks that deserve a simpler solution.",
-    photoTitle: "More tools on the way",
-    photoBody:
-      "Manage System continues to grow as a collection of practical work tools. New modules are added when they are ready to use.",
-    coming: "Coming soon",
   },
 } as const;
 
@@ -105,7 +89,7 @@ const HomePage: React.FC = () => {
           </a>
 
           <a className="ms-tool-card ms-tool-card-oppdrag" href="https://mineoppdrag.managesystem.no">
-            <div className="ms-tool-logo-wrap">
+            <div className="ms-tool-logo-wrap" aria-hidden="true">
               <img className="ms-tool-logo" src={`${assetBase}mine_oppdrag_logo.png`} alt="" />
             </div>
             <div className="ms-tool-copy">
@@ -118,27 +102,6 @@ const HomePage: React.FC = () => {
             </div>
           </a>
         </div>
-      </section>
-
-      <section className="ms-home-section ms-construction-section" id="under-construction" aria-labelledby="construction-title">
-        <div className="ms-home-section-heading ms-home-section-heading-light">
-          <div>
-            <span className="ms-home-kicker">{c.constructionKicker}</span>
-            <h2 id="construction-title">{c.constructionTitle}</h2>
-          </div>
-          <p>{c.constructionIntro}</p>
-        </div>
-
-        <article className="ms-construction-card">
-          <div className="ms-construction-image">
-            <img src={`${assetBase}mcl_under_construction.png`} alt="" />
-          </div>
-          <div className="ms-construction-copy">
-            <span className="ms-status-pill">{c.coming}</span>
-            <h3>{c.photoTitle}</h3>
-            <p>{c.photoBody}</p>
-          </div>
-        </article>
       </section>
     </main>
   );
